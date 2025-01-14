@@ -3,7 +3,7 @@
 #include "Vector3.h"
 #include "ColorGC.h"
 #include <vector>
-
+#include <set>
 
 class PolygonGC;
 enum LightSourceType
@@ -19,15 +19,28 @@ enum EdgeMode {
     NO_VISIBLE = 1,
     SILHOUTTE = 2
 };
-
+enum pixType {
+    FROM_LINE,
+    FROM_POLYGON,
+};
 typedef struct GData {
     float z_indx;
     const PolygonGC* polygon;
     ColorGC pixColor;
     Vector3 pixPos;
     Vector3 pixNorm;
-    GData* next;
+    pixType m_pixType;
+    GData(float z, const PolygonGC* p, ColorGC c, Vector3 pos, Vector3 norm,pixType type)
+        : z_indx(z), polygon(p), pixColor(c), pixPos(pos), pixNorm(norm),m_pixType(type) {
+    }
+
 } gData;
+
+struct CompareZIndex {
+    bool operator()(const gData& lhs, const gData& rhs) const {
+        return lhs.z_indx < rhs.z_indx;  // Ascending order
+    }
+};
 
 
 enum RENDER_FLAG {

@@ -463,7 +463,7 @@ int findIntersectionAndFitToScreen(std::pair<std::shared_ptr<Vertex>, std::share
 
 
 
-void PolygonGC::fillGbuffer(gData* gBuffer, int width, int hight, const RenderMode& rm) const
+void PolygonGC::fillGbuffer(std::multiset<gData, CompareZIndex>* gBuffer, int width, int hight, const RenderMode& rm) const
 {
     //override color?
     //TODO
@@ -511,19 +511,12 @@ void PolygonGC::fillGbuffer(gData* gBuffer, int width, int hight, const RenderMo
         {
             float t2 = (double)(x - smallX) / (bigX - smallX);
             Vertex interpolatedVertex(samllestVecX, biggestVecX, t2);
-            if (gBuffer[(y * width) + x].z_indx > interpolatedVertex.loc().z)
-            {
-                gBuffer[(y * width) + x].z_indx = interpolatedVertex.loc().z;
-                gBuffer[(y * width) + x].polygon = this;
-                gBuffer[(y * width) + x].pixColor= interpolatedVertex.getColor();
-                Line tmp;
-                if(!rm.getPolygonsUseCNormalFlag())
-                    tmp = interpolatedVertex.getDataNormalLine();
-                else
-                    tmp = interpolatedVertex.getCalcNormalLine();
-                gBuffer[(y * width) + x].pixNorm = tmp.direction();//- tmp.m_a;
-                gBuffer[(y * width) + x].pixPos = tmp.m_a;
-            }
+            Line tmp;
+            if(!rm.getPolygonsUseCNormalFlag())
+                tmp = interpolatedVertex.getDataNormalLine();
+            else
+                tmp = interpolatedVertex.getCalcNormalLine();    
+            gBuffer[(y * width) + x].insert(gData(interpolatedVertex.loc().z, this, interpolatedVertex.getColor(), tmp.m_a, tmp.direction(), pixType::FROM_POLYGON));
         }
     }
 }

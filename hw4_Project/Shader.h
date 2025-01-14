@@ -20,7 +20,7 @@ private:
 public:
     //virtual void draw(std::vector<Geometry*> objs) = 0;
     ColorGC calcLightColorAtPos(Vector3 pos, Vector3 normal, ColorGC colorBeforeLight) const;
-    void applyShading(uint32_t* dest, const gData* gBuffer, int width, int height, const RenderMode& rd) const;
+    void applyShading(uint32_t* dest,  std::multiset<gData, CompareZIndex>* gBuffer, int width, int height, const RenderMode& rd) const;
     Shader();
     void setFogColor(const ColorGC& color);
     ColorGC getFogColor()const;

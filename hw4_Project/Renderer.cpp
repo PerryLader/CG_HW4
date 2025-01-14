@@ -112,19 +112,9 @@ void Renderer::render(const Camera* camera, int width, int height, const std::ve
     lines[LineVectorIndex::SHAPES].push_back(Line((viewProjectionMatrix * Vector4(-1, 0, 0, 1)).toVector3(), (viewProjectionMatrix * Vector4(1, 0, 0, 1)).toVector3(), ColorGC(255, 0, 0)));
     lines[LineVectorIndex::SHAPES].push_back(Line((viewProjectionMatrix * Vector4(0, -1, 0, 1)).toVector3(), (viewProjectionMatrix * Vector4(0, 1, 0, 1)).toVector3(), ColorGC(0, 255, 0)));
     lines[LineVectorIndex::SHAPES].push_back(Line((viewProjectionMatrix * Vector4(0, 0, -1, 1)).toVector3(), (viewProjectionMatrix * Vector4(0, 0, 1, 1)).toVector3(), ColorGC(0, 0, 255)));
-    //for (int y = 0; y < m_height; y+=4)
-    //    for (int x = 0; x < m_width; x+=8)
-    //        if (m_GBuffer[y*m_width+x].polygon) {
-    //            lines[LineVectorIndex::SHAPES].push_back(Line(m_GBuffer[y * m_width + x].pixPos, m_GBuffer[y * m_width + x].pixPos+ (viewProjectionMatrix * viewProjectionMatrix.transpose()* Vector4::extendOne(m_GBuffer[y * m_width + x].pixNorm)).toVector3()*0.25, ColorGC(255, 0, 255)));
-    //     }
-    
-    //the Final draw
-
-  //  m_shader.applyShading(m_Buffer, m_GBuffer, m_width, m_height);
-
+   
     m_shader.applyShading(m_Buffer, m_GBuffer, m_width, m_height, renderMode);
 
-    //this->drawSolid(m_shader);
     this->drawWireFrame(lines);
 
     if (renderMode.getSilohetteFlag()) this->drawSilhoutteEdges(SilhoutteMap);
@@ -153,8 +143,8 @@ uint32_t* Renderer::getBuffer() const{
 void Renderer::createBuffers() {
     clear(false);
     m_Buffer = new uint32_t[m_width * m_height]; // RGB buffer
-    m_GBuffer = new gData[m_width * m_height]; // Z-buffer
-    gData initGdataObj = { FLT_MAX, nullptr, 0, 0,0, nullptr};
+    m_GBuffer = new std::multiset<gData, CompareZIndex>[m_width * m_height]; // Z-buffer
+    std::multiset<gData, CompareZIndex> initGdataObj;
     std::fill(m_GBuffer, m_GBuffer + (m_width * m_height), initGdataObj);
     std::memset(m_Buffer, 0, sizeof(uint32_t) * m_width * m_height);
 }
@@ -165,6 +155,7 @@ void Renderer::fillColorBG() {
 }
 
 void Renderer::fillPngBG() {
+    //TODO fix png run down of tranperncy
     PngWrapper bgImage(m_bgInfo.pngPath, m_width, m_height);
     if (!bgImage.ReadPng())
     {

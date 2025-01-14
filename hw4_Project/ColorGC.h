@@ -31,6 +31,7 @@ public:
 
     uint32_t getARGB() const;
     uint32_t getRGBA() const;
+
     // Set the entire RGBA value
     void setARGB(uint32_t rgba);
 
@@ -42,6 +43,7 @@ public:
     static const uint8_t defaultBlue = 100;
     static const uint8_t defaultAlpha = 255;
     static ColorGC mixTwoColors(const ColorGC& a, const ColorGC& b);
+    static ColorGC alphaColorInterpolating(const ColorGC& closer, const ColorGC& farther);
     //oprators
     ColorGC operator+(const ColorGC& other) const;
     ColorGC operator-(const ColorGC& other) const;

@@ -35,7 +35,7 @@ public:
 
 
 	//UTILS
-	void fillGbuffer(gData* gBuffer, int width, int height, RenderMode& rm) const;
+	void fillGbuffer(std::multiset<gData, CompareZIndex>* gBuffer, int width, int height, RenderMode& rm) const;
 	void resetBounds();
 	void loadLines(std::vector<Line> lines[LineVectorIndex::LAST], RenderMode& renderMode, std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual>& SilhoutteMap) const;
 	void addPolygon(PolygonGC* poli);

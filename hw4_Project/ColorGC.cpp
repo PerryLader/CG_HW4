@@ -61,6 +61,30 @@ ColorGC ColorGC::mixTwoColors(const ColorGC& a, const ColorGC& b)
     return ColorGC(red, green, blue, alpha);
 }
 
+ColorGC ColorGC::alphaColorInterpolating(const ColorGC& closer, const ColorGC& farther)
+{
+    float alphaCloser = closer.getAlpha() / 255.0f;
+    float alphaFarther = farther.getAlpha() / 255.0f;
+
+    // Calculate the effective alpha of the result
+    float newAlpha = alphaCloser + (1.0f - alphaCloser) * alphaFarther;
+
+    // If the new alpha is 0, the result is fully transparent
+    if (newAlpha == 0.0f) {
+        return ColorGC(0,0,0);
+    }
+
+    // Compute premultiplied contributions for each color channel
+    float newRed = (closer.getRed() * alphaCloser + farther.getRed() * alphaFarther * (1.0f - alphaCloser)) / newAlpha;
+    float newGreen = (closer.getGreen() * alphaCloser + farther.getGreen() * alphaFarther * (1.0f - alphaCloser)) / newAlpha;
+    float newBlue = (closer.getBlue() * alphaCloser + farther.getBlue() * alphaFarther * (1.0f - alphaCloser)) / newAlpha;
+
+    return ColorGC(clamp((uint32_t)newRed),
+        clamp((uint32_t)newGreen), 
+        clamp((uint32_t)newBlue),
+        clamp((uint32_t)newAlpha * 255));
+}
+
 ColorGC ColorGC::operator+(const ColorGC& other) const
 {
     uint32_t red= this->getRed()+other.getRed();

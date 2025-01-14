@@ -80,7 +80,7 @@ void Geometry::createObjBboxLines(std::vector<Line> lines[LineVectorIndex::LAST]
 	lines[LineVectorIndex::OBJ_BBOX].insert(lines[LineVectorIndex::OBJ_BBOX].end(), bBoxLines.begin(), bBoxLines.end());	
 }
 
-void Geometry::fillGbuffer(gData* gBuffer, int width, int height , RenderMode& rm) const
+void Geometry::fillGbuffer(std::multiset<gData, CompareZIndex>* gBuffer, int width, int height , RenderMode& rm) const
 {
 	for (const auto& poly : m_polygons) if (!rm.getRenderCulledFlag() ||rm.getRenderCulledFlag() && poly->isVisible())
 	{

@@ -76,24 +76,76 @@ void Shader::updateLighting(LightParams lights[MAX_LIGHT], LightParams ambient, 
 		m_specularityExp = sceneSpecExp;
 }
 
-void Shader::applyShading(uint32_t* dest, const gData* gBuffer, int width, int height, const RenderMode& rd) const{
+void Shader::applyShading(uint32_t* dest, std::multiset<gData, CompareZIndex>* gBuffer, int width, int height, const RenderMode& rd) const{
 	SHADE_MODE mode = rd.getRenderShadeFlag();
 	if (mode == SHADE_MODE::NONE)
 		return;
 	for (size_t y = 0; y < height; y++)
 	{
-		for (size_t x = 0; x < width; x++) if(gBuffer[(y * width) + x].polygon) {
+		for (size_t x = 0; x < width; x++)if(!gBuffer[(y * width) + x].empty())
+		{
 			ColorGC tmp;
 			switch (mode) {
 			case SHADE_MODE::GOUROUD:
-				tmp = gBuffer[(y * width) + x].pixColor;
+				tmp = (*gBuffer[(y * width) + x].begin()).pixColor;
+				gBuffer[(y * width) + x].erase(gBuffer[(y * width) + x].begin());
+				for (const gData& data : gBuffer[(y * width) + x])
+				{
+					tmp = ColorGC::alphaColorInterpolating(tmp, data.pixColor);
+				}
 				break;
 			case SHADE_MODE::PHONG:
-				tmp = calcLightColorAtPos(gBuffer[(y * width) + x].pixPos,gBuffer[(y * width) + x].pixNorm, gBuffer[(y * width) + x].polygon->getColor());
+				if ((*gBuffer[(y * width) + x].begin()).m_pixType == pixType::FROM_POLYGON)
+				{
+					tmp = calcLightColorAtPos(
+						(*gBuffer[(y * width) + x].begin()).pixPos,
+						(*gBuffer[(y * width) + x].begin()).pixNorm,
+						(*gBuffer[(y * width) + x].begin()).polygon->getColor());
+				}
+				else
+				{
+					tmp = (*gBuffer[(y * width) + x].begin()).pixColor;
+				}
+				gBuffer[(y * width) + x].erase(gBuffer[(y * width) + x].begin());
+				for (const gData& data : gBuffer[(y * width) + x])
+				{
+					if (data.m_pixType == pixType::FROM_POLYGON)
+					{
+						tmp = ColorGC::alphaColorInterpolating(tmp,
+							calcLightColorAtPos(
+								data.pixPos,
+								data.pixNorm,
+								data.polygon->getColor()));
+					}
+					else
+					{
+						tmp = ColorGC::alphaColorInterpolating(tmp, data.pixColor);
+					}
+				}
 				break;
 			case SHADE_MODE::SOLID:
-				tmp = gBuffer[(y * width) + x].polygon->getSceneColor();
-					break;
+				std::multiset<gData, CompareZIndex> tempForDebug = gBuffer[(y * width) + x];
+				if ((*gBuffer[(y * width) + x].begin()).m_pixType == pixType::FROM_POLYGON)
+				{
+					tmp = (*gBuffer[(y * width) + x].begin()).polygon->getSceneColor();
+				}
+				else
+				{
+					tmp = (*gBuffer[(y * width) + x].begin()).pixColor;
+				}				
+				gBuffer[(y * width) + x].erase(gBuffer[(y * width) + x].begin());
+				for (const gData& data : gBuffer[(y * width) + x])
+				{
+					if (data.m_pixType == pixType::FROM_POLYGON)
+					{
+						tmp = ColorGC::alphaColorInterpolating(tmp, data.polygon->getSceneColor());
+					}
+					else
+					{
+						tmp = ColorGC::alphaColorInterpolating(tmp, data.pixColor);						
+					}
+				}
+				break;
 			}
 			dest[(y * width) + x] = tmp.getARGB();
 		}

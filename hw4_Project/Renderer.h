@@ -1,7 +1,7 @@
 #pragma once
 #ifndef RENDERER_H
 #define RENDERER_H
-
+#include <set>
 #include <vector>
 #include <string>
 #include "Model.h"
@@ -29,7 +29,7 @@ public:
 
 private:
     uint32_t* m_Buffer; // RGB by width by height;
-    gData* m_GBuffer; // gData width by height;
+    std::multiset<gData, CompareZIndex>* m_GBuffer; // gData width by height;
     uint32_t* m_BgBuffer; // width by height;
     int m_width, m_height;
     bgInfo m_bgInfo;

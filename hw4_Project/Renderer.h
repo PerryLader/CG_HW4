@@ -24,6 +24,8 @@ public:
     void generateMovie(double movieLength, double frameRate, const std::vector<Model*> models, RenderMode& renderMode);
     void updateLighting(LightParams lights[MAX_LIGHT], LightParams ambient, int sceneSpecExp);
     void clear(bool clearBg);
+    void setFogColor(const ColorGC& color);
+    ColorGC getFogColor()const;
 
 private:
     uint32_t* m_Buffer; // RGB by width by height;

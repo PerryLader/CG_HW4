@@ -66,6 +66,7 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 	ON_COMMAND(ID_LIGHT_SHADING_GOURAUD, OnLightShadingGouraud)
 	ON_UPDATE_COMMAND_UI(ID_LIGHT_SHADING_GOURAUD, OnUpdateLightShadingGouraud)
 	ON_COMMAND(ID_LIGHT_CONSTANTS, OnLightConstants)
+	ON_COMMAND(ID_FOG_COLOR, OnFogColor)
 	ON_COMMAND(ID_CALC_P_NORMALS, OnShowCalcPolyNormals)
 	ON_UPDATE_COMMAND_UI(ID_CALC_P_NORMALS, OnUpdateShowCalcPolyNormals)
 	ON_COMMAND(ID_CALC_V_NORMALS, OnShowCalcVertNormals)
@@ -604,6 +605,22 @@ void CCGWorkView::OnNormalsColor() {
 	m_rendermode.setRenderOverrideNormalColorFlag();
 	Invalidate();
 }
+void CCGWorkView::OnFogColor() {
+		CColorDialog colorDlg(RGB(255, 255, 255), CC_FULLOPEN | CC_RGBINIT);
+
+		// Display the color dialog
+		if (colorDlg.DoModal() == IDOK)
+		{
+			// Get the selected color
+			COLORREF color = colorDlg.GetColor();
+			ColorGC gc_color(GetRValue(color), GetGValue(color), GetBValue(color));
+			m_scene.setFogColor(gc_color);
+		}
+	
+	
+	Invalidate();
+}
+
 void CCGWorkView::OnUpdateNormalsColor(CCmdUI* pCmdUI) {
 	pCmdUI->SetCheck(m_rendermode.getRenderOverrideNormalColorFlag());
 }

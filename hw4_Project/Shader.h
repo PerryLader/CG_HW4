@@ -8,6 +8,7 @@
 class Shader
 {
 private:
+    ColorGC m_fogColor;
     float m_specularityExp;
     LightParams m_lightSources[LightID::MAX_LIGHT];
     Vector3 m_light_pos[LightID::MAX_LIGHT];
@@ -21,7 +22,8 @@ public:
     ColorGC calcLightColorAtPos(Vector3 pos, Vector3 normal, ColorGC colorBeforeLight) const;
     void applyShading(uint32_t* dest, const gData* gBuffer, int width, int height, const RenderMode& rd) const;
     Shader();
-
+    void setFogColor(const ColorGC& color);
+    ColorGC getFogColor()const;
     void updateLighting(LightParams lights[MAX_LIGHT], LightParams ambient, int sceneSpecExp);
 
     void setView(const Vector3& camera_pos, const Matrix4& mat_inv , bool isPerspective) {

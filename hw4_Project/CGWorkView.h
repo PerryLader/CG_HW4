@@ -139,6 +139,7 @@ protected:
 	afx_msg void OnShowBBox();
 	afx_msg void OnUpdateShowBBox(CCmdUI* pCmdUI);
 	afx_msg void OnNormalsColor();
+	afx_msg void OnFogColor();
 	afx_msg void OnUpdateNormalsColor(CCmdUI* pCmdUI);
 	afx_msg void OnWireframeColor();
 	afx_msg void OnUpdateWireframeColor(CCmdUI* pCmdUI);

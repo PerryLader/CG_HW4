@@ -215,6 +215,15 @@ static std::vector<double> generateTimeVector(double movieLength, double frameRa
         double t = static_cast<double>(i) / (totalFrames - 1); tValues.push_back(t); 
     } return tValues; 
 }
+void Renderer::setFogColor(const ColorGC& color)
+{
+    this->m_shader.setFogColor(color);
+}
+
+ColorGC Renderer::getFogColor() const
+{
+    return this->m_shader.getFogColor();
+}
 
 
 void Renderer::generateMovie(double movieLength, double frameRate, const std::vector<Model*> models, RenderMode& renderMode) {

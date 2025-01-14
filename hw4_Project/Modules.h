@@ -4,6 +4,7 @@
 #include "ColorGC.h"
 #include <vector>
 
+
 class PolygonGC;
 enum LightSourceType
 {

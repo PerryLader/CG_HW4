@@ -13,6 +13,7 @@ Scene::Scene():m_renderer(new Renderer()) {
     m_cameras.push_back(camPrespective);
 
     m_primaryCameraIndex = CAMERA_TYPE::ORTHOGONAL;
+    
 }
 // Function to add a model to the scene
 void Scene::addModel(Model* model) {
@@ -66,6 +67,17 @@ uint32_t* Scene::getBuffer() {
 
 void Scene::executeCommand(ScreenCommand* command) {
     command->execute(*this);
+}
+
+void Scene::setFogColor(const ColorGC& color)
+{
+    this->m_renderer->setFogColor(color);
+}
+
+ColorGC Scene::getFogColor() const
+{
+    return this->m_renderer->getFogColor();
+
 }
 
 void Scene::applyToObjectSpace(const Matrix4& tMat) {

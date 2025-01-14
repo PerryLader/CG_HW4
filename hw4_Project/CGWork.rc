@@ -100,6 +100,8 @@ BEGIN
         MENUITEM "Set File Dimensions",         ID_RENDER_SETFILEDIM
         MENUITEM SEPARATOR
         MENUITEM "PlaceHolder",                 ID_RENDER_PLACEHOLDER, INACTIVE
+        MENUITEM SEPARATOR
+        MENUITEM "Fog color", ID_FOG_COLOR
     END
     POPUP "&View"
     BEGIN

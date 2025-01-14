@@ -97,6 +97,7 @@
 #define ID_RENDER_FLIPNORMAL            32834
 #define ID_RENDER_BFCULL                32835
 #define ID_RENDER_DYAMIC                32836
+#define ID_FOG_COLOR                    32837
 
 // Next default values for new objects
 // 

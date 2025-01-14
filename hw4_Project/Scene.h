@@ -30,7 +30,8 @@ public:
  //   void setBgfromPng(bool streched, const std::string& fileLocation);
     uint32_t* getBuffer();
     void executeCommand(ScreenCommand* command);
-
+    void setFogColor(const ColorGC& color);
+    ColorGC getFogColor()const;
     void applyToObjectSpace(const Matrix4& tMat);
     void applyToCamera(const Matrix4& tMat);
     void setCamera(CAMERA_TYPE cameraType);

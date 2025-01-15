@@ -24,6 +24,15 @@ void Geometry::setColor(ColorGC newColor)
 	this->m_objColor = newColor;
 }
 
+void Geometry::setAlpha(uint8_t alpha)
+{
+	this->m_objColor.setAlpha(alpha);
+	for (auto& poly : m_polygons)
+	{
+		poly->setAlpha(alpha);
+	}
+}
+
 std::string Geometry::getName() const{
 	return this->m_name;
 }

@@ -210,7 +210,9 @@
     </ClCompile>
     <ClCompile Include="MaterialDlg.cpp" />
     <ClCompile Include="Matrix4.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="NoShadeShader.cpp" />
+    <ClCompile Include="ObjTranspDialog.cpp" />
     <ClCompile Include="PngWrapper.cpp" />
     <ClCompile Include="Polygon.cpp" />
     <ClCompile Include="Renderer.cpp" />
@@ -246,6 +248,7 @@
     <ClInclude Include="dynamicSliderDialog.h" />
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="Modules.h" />
+    <ClInclude Include="ObjTranspDialog.h" />
     <ClInclude Include="ScreenCommand.h" />
     <ClInclude Include="iritSkel.h" />
     <ClInclude Include="Light.h" />

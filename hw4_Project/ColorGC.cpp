@@ -46,7 +46,7 @@ ColorGC ColorGC::defaultColor() {
 
 
 
-static uint8_t clamp(uint32_t x) {
+uint8_t ColorGC::clamp(uint32_t x) {
     if (x < 0) return 0;
     if (x > 255) return 255;
     return x;
@@ -71,18 +71,18 @@ ColorGC ColorGC::alphaColorInterpolating(const ColorGC& closer, const ColorGC& f
 
     // If the new alpha is 0, the result is fully transparent
     if (newAlpha == 0.0f) {
-        return ColorGC(0,0,0);
+        return ColorGC(0,0,0,0);
     }
 
     // Compute premultiplied contributions for each color channel
     float newRed = (closer.getRed() * alphaCloser + farther.getRed() * alphaFarther * (1.0f - alphaCloser)) / newAlpha;
     float newGreen = (closer.getGreen() * alphaCloser + farther.getGreen() * alphaFarther * (1.0f - alphaCloser)) / newAlpha;
     float newBlue = (closer.getBlue() * alphaCloser + farther.getBlue() * alphaFarther * (1.0f - alphaCloser)) / newAlpha;
-
+    newAlpha = newAlpha * 255;
     return ColorGC(clamp((uint32_t)newRed),
         clamp((uint32_t)newGreen), 
         clamp((uint32_t)newBlue),
-        clamp((uint32_t)newAlpha * 255));
+        clamp((uint32_t)newAlpha));
 }
 
 ColorGC ColorGC::operator+(const ColorGC& other) const
@@ -104,7 +104,7 @@ ColorGC ColorGC::operator-(const ColorGC& other) const
     uint32_t red = this->getRed() - other.getRed();
     uint32_t green = this->getGreen() - other.getGreen();
     uint32_t blue = this->getBlue() - other.getBlue();
-    uint32_t alpha = this->getAlpha() - other.getAlpha();
+    uint32_t alpha = (this->getAlpha() + other.getAlpha())/2;
 
 
     return ColorGC(clamp(red),
@@ -118,13 +118,13 @@ ColorGC ColorGC::operator*(const float scalar) const
     uint32_t red = this->getRed() * scalar;
     uint32_t green = this->getGreen() * scalar;
     uint32_t blue = this->getBlue() * scalar;
-    uint32_t alpha = this->getAlpha() * scalar;
+    //uint32_t alpha = this->getAlpha() * scalar;
 
 
     return ColorGC(clamp(red),
         clamp(green),
         clamp(blue),
-        clamp(alpha));
+        this->getAlpha());
 }
 
 ColorGC ColorGC::operator*(const ColorGC& other) const

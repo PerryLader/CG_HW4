@@ -128,6 +128,7 @@ protected:
 	afx_msg void OnLightShadingGouraud();
 	afx_msg void OnUpdateLightShadingGouraud(CCmdUI* pCmdUI);
 	afx_msg void OnLightConstants();
+	afx_msg void OnObjTranspConstants();
 	afx_msg void OnShowCalcPolyNormals();
 	afx_msg void OnUpdateShowCalcPolyNormals(CCmdUI* pCmdUI);
 	afx_msg void OnShowCalcVertNormals();

@@ -32,7 +32,7 @@ public:
 	BBox getBBox() const;
 	ColorGC getColor()const;
 	void setColor(ColorGC newColor);
-
+	void setAlpha(uint8_t alpha);
 
 	//UTILS
 	void fillGbuffer(std::multiset<gData, CompareZIndex>* gBuffer, int width, int height, RenderMode& rm) const;

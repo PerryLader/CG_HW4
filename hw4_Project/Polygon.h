@@ -98,6 +98,7 @@ public:
     BBox getBbox() const;
     bool hasDataNormalLine() const;
     bool hasVertsDataNormalLine() const;
+    void setAlpha(uint8_t alpha);
 
     void setVisibility(bool isVisble);
     bool isVisible()const;

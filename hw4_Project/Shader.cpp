@@ -57,9 +57,10 @@ ColorGC Shader::calcLightColorAtPos(Vector3 pos, Vector3 normal, ColorGC colorBe
 	float fogFactor = clampF((pos.z+1) / (fogEnd - fogStart), 0.0f, 1.0f)/1.2/*Magic number just to make it look better can be daleted*/;
 
 	// Blend final color with fog color
+	uint8_t tempAlpha=colorBeforeLight.getAlpha();
 	ColorGC finalColor = lightColor * colorBeforeLight + specColor;
-	finalColor = (finalColor * (1.0f - fogFactor)) + (m_fogColor * fogFactor);
-
+	//finalColor = (finalColor * (1.0f - fogFactor)) + (m_fogColor * fogFactor);
+	finalColor.setAlpha(tempAlpha);
 	return finalColor;
 }
 
@@ -91,6 +92,10 @@ void Shader::applyShading(uint32_t* dest, std::multiset<gData, CompareZIndex>* g
 				gBuffer[(y * width) + x].erase(gBuffer[(y * width) + x].begin());
 				for (const gData& data : gBuffer[(y * width) + x])
 				{
+					if (tmp.getAlpha() == 255)
+					{
+						break;
+					}
 					tmp = ColorGC::alphaColorInterpolating(tmp, data.pixColor);
 				}
 				break;
@@ -109,6 +114,10 @@ void Shader::applyShading(uint32_t* dest, std::multiset<gData, CompareZIndex>* g
 				gBuffer[(y * width) + x].erase(gBuffer[(y * width) + x].begin());
 				for (const gData& data : gBuffer[(y * width) + x])
 				{
+					if (tmp.getAlpha() == 255)
+					{
+						break;
+					}
 					if (data.m_pixType == pixType::FROM_POLYGON)
 					{
 						tmp = ColorGC::alphaColorInterpolating(tmp,
@@ -136,6 +145,10 @@ void Shader::applyShading(uint32_t* dest, std::multiset<gData, CompareZIndex>* g
 				gBuffer[(y * width) + x].erase(gBuffer[(y * width) + x].begin());
 				for (const gData& data : gBuffer[(y * width) + x])
 				{
+					if (tmp.getAlpha() == 255)
+					{
+						break;
+					}
 					if (data.m_pixType == pixType::FROM_POLYGON)
 					{
 						tmp = ColorGC::alphaColorInterpolating(tmp, data.polygon->getSceneColor());
@@ -147,7 +160,8 @@ void Shader::applyShading(uint32_t* dest, std::multiset<gData, CompareZIndex>* g
 				}
 				break;
 			}
-			dest[(y * width) + x] = tmp.getARGB();
+			ColorGC finalColor = ColorGC::alphaColorInterpolating(tmp, ColorGC(dest[(y * width) + x]));
+			dest[(y * width) + x] = finalColor.getARGB();
 		}
 	}
 }

@@ -23,7 +23,7 @@ void Renderer::drawWireFrame(std::vector<Line> lines[LineVectorIndex::LAST])
         for (Line& line : lines[i]) {
             if (line.clip())
             {   
-                line.draw(m_Buffer, m_GBuffer, m_width, m_height);
+                line.draw(m_GBuffer, m_width, m_height);
             }
         }
     }
@@ -113,9 +113,9 @@ void Renderer::render(const Camera* camera, int width, int height, const std::ve
     lines[LineVectorIndex::SHAPES].push_back(Line((viewProjectionMatrix * Vector4(0, -1, 0, 1)).toVector3(), (viewProjectionMatrix * Vector4(0, 1, 0, 1)).toVector3(), ColorGC(0, 255, 0)));
     lines[LineVectorIndex::SHAPES].push_back(Line((viewProjectionMatrix * Vector4(0, 0, -1, 1)).toVector3(), (viewProjectionMatrix * Vector4(0, 0, 1, 1)).toVector3(), ColorGC(0, 0, 255)));
    
+    this->drawWireFrame(lines);
     m_shader.applyShading(m_Buffer, m_GBuffer, m_width, m_height, renderMode);
 
-    this->drawWireFrame(lines);
 
     if (renderMode.getSilohetteFlag()) this->drawSilhoutteEdges(SilhoutteMap);
 
@@ -145,6 +145,7 @@ void Renderer::createBuffers() {
     m_Buffer = new uint32_t[m_width * m_height]; // RGB buffer
     m_GBuffer = new std::multiset<gData, CompareZIndex>[m_width * m_height]; // Z-buffer
     std::multiset<gData, CompareZIndex> initGdataObj;
+    //initGdataObj.insert(gData(FLT_MAX,nullptr,m_bgInfo.color,Vector3(),Vector3(),pixType::FROM_BACKGROUND));
     std::fill(m_GBuffer, m_GBuffer + (m_width * m_height), initGdataObj);
     std::memset(m_Buffer, 0, sizeof(uint32_t) * m_width * m_height);
 }

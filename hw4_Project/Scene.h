@@ -1,7 +1,7 @@
 #pragma once
 #ifndef SCENE_H
 #define SCENE_H
-
+#include <string>
 #include <vector>
 #include "Model.h"
 #include "Camera.h"
@@ -37,6 +37,9 @@ public:
     void setCamera(CAMERA_TYPE cameraType);
     Camera* getPerspectiveCamera();
     void invalidateLighting(LightParams lights[MAX_LIGHT], LightParams ambient, int sceneSpecExp);
+    int getNumOfObjects()const;
+    void setAlphaValues(std::vector<std::pair<std::string, int>> table);
+    std::vector<std::pair<std::string, int>> getObjNameTable()const;
     void handleTransformationAction(int dx, int dy,
          float aspectRatio,
          int action,

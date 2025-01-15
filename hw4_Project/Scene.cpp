@@ -159,6 +159,28 @@ void Scene::handleTransformationAction(int dx, int dy,
 void Scene::invalidateLighting(LightParams lights[MAX_LIGHT], LightParams ambient, int sceneSpecExp) {
     m_renderer->updateLighting(lights, ambient, sceneSpecExp);
 }
+int Scene::getNumOfObjects() const
+{
+    return this->m_models.size();
+}
+void Scene::setAlphaValues(std::vector<std::pair<std::string, int>> table)
+{
+    for (size_t i = 0; i < table.size(); i++)
+    {
+        this->m_models[i]->setAlpha(ColorGC::clamp(table[i].second));
+    }
+}
+std::vector<std::pair<std::string, int>> Scene::getObjNameTable() const
+{
+    std::vector<std::pair<std::string, int>> tableName;
+    
+    for (auto& model : m_models)
+    {
+        tableName.push_back(std::pair<std::string, int>(model->getModelsName(), model->getAlpha()));
+        
+    }
+    return tableName;
+}
 void Scene::print() const {
     std::cout << "Scene:" << std::endl;
     for (const auto& elem : m_models)

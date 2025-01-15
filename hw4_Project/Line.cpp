@@ -117,7 +117,7 @@ bool Line::clip()
     return false;
 }
 
-void Line::draw(uint32_t* m_Buffer, std::multiset<gData, CompareZIndex>* gBuffer,int width,int hight)const
+void Line::draw(std::multiset<gData, CompareZIndex>* gBuffer,int width,int hight)const
 {
     // Calculate differences
     int halfWidth = width / 2;

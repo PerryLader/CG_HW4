@@ -161,6 +161,7 @@ void PolygonGC::setColor(const ColorGC& newColor) {
     m_primeColor = newColor;
 }
 void PolygonGC::setSceneColor(const ColorGC& newColor) {
+    
     m_sceneColor = newColor;
 }
 
@@ -472,8 +473,8 @@ void PolygonGC::fillGbuffer(std::multiset<gData, CompareZIndex>* gBuffer, int wi
     this->loadVertexEdgesToContainer(lineVector, nullptr);
     int halfWidth = width / 2;
     int halfhight = hight / 2;
-    int yMax = min((int)(((m_bbox.getMax().y * halfhight) + halfhight) + 1), hight);
-    int yMin = max(((m_bbox.getMin().y * halfhight) + halfhight) - 1,0);
+    int yMax = min((int)(((m_bbox.getMax().y * halfhight) + halfhight) ), hight);
+    int yMin = max(((m_bbox.getMin().y * halfhight) + halfhight) ,0);
 
     std::sort(lineVector.begin(), lineVector.end(), []
     (const std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>&a ,
@@ -504,8 +505,8 @@ void PolygonGC::fillGbuffer(std::multiset<gData, CompareZIndex>* gBuffer, int wi
                 biggestVecX = biggestVecX.loc().x > vetrexPair.second->loc().x ? biggestVecX : *vetrexPair.second;
             }            
         }
-        int smallX = max(0,transformToScreenSpace(samllestVecX.loc().x, halfWidth)-1);
-        int bigX = min(width,transformToScreenSpace(biggestVecX.loc().x, halfWidth)+1);
+        int smallX = max(0,transformToScreenSpace(samllestVecX.loc().x, halfWidth));
+        int bigX = min(width,transformToScreenSpace(biggestVecX.loc().x, halfWidth));
 
         for (int x = smallX; x < bigX; x++)
         {
@@ -579,6 +580,17 @@ bool PolygonGC::hasDataNormalLine() const{
 }
 bool PolygonGC::hasVertsDataNormalLine()const {
     return m_vertHaveDataNormal;
+}
+void PolygonGC::setAlpha(uint8_t alpha)
+{
+    this->m_primeColor.setAlpha(alpha);
+    this->m_sceneColor.setAlpha(alpha);
+    for (auto& ver : this->m_vertices)
+    {
+        ColorGC tmp=ver->getColor();
+        tmp.setAlpha(alpha);
+        ver->setColor(tmp);
+    }
 }
 void PolygonGC::setVisibility(bool isVisible)
 {

@@ -22,6 +22,7 @@ enum EdgeMode {
 enum pixType {
     FROM_LINE,
     FROM_POLYGON,
+    FROM_BACKGROUND
 };
 typedef struct GData {
     float z_indx;

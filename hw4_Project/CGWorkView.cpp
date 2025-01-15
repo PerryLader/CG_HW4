@@ -11,6 +11,7 @@ using std::cout;
 using std::endl;
 #include "MaterialDlg.h"
 #include "LightDialog.h"
+#include "ObjTranspDialog.h"
 #include "dynamicSliderDialog.h"
 
 #ifdef _DEBUG
@@ -66,6 +67,7 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 	ON_COMMAND(ID_LIGHT_SHADING_GOURAUD, OnLightShadingGouraud)
 	ON_UPDATE_COMMAND_UI(ID_LIGHT_SHADING_GOURAUD, OnUpdateLightShadingGouraud)
 	ON_COMMAND(ID_LIGHT_CONSTANTS, OnLightConstants)
+	ON_COMMAND(ID_OBJ_TRANSP, OnObjTranspConstants)
 	ON_COMMAND(ID_FOG_COLOR, OnFogColor)
 	ON_COMMAND(ID_CALC_P_NORMALS, OnShowCalcPolyNormals)
 	ON_UPDATE_COMMAND_UI(ID_CALC_P_NORMALS, OnUpdateShowCalcPolyNormals)
@@ -780,6 +782,24 @@ void CCGWorkView::OnLightConstants()
 		m_sceneSpecExp = dlg.GetDialogExpData();
 	}
 	m_scene.invalidateLighting(m_lights, m_ambientLight, m_sceneSpecExp);
+	Invalidate();
+}
+void CCGWorkView::OnObjTranspConstants()
+{
+	CObjectDialog dlg;
+
+	for (int id = 0; id < this->m_scene.getNumOfObjects(); id++)
+	{
+		dlg.SetDialogData(this->m_scene.getObjNameTable());
+	}
+	
+	if (dlg.DoModal() == IDOK)
+	{
+		
+		std::vector<std::pair<std::string, int>> temp = dlg.GetDialogData();
+		this->m_scene.setAlphaValues(temp);
+		
+	}
 	Invalidate();
 }
 

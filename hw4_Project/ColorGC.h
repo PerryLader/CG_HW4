@@ -42,6 +42,7 @@ public:
     static const uint8_t defaultGreen = 100;
     static const uint8_t defaultBlue = 100;
     static const uint8_t defaultAlpha = 255;
+    static uint8_t clamp(uint32_t x);
     static ColorGC mixTwoColors(const ColorGC& a, const ColorGC& b);
     static ColorGC alphaColorInterpolating(const ColorGC& closer, const ColorGC& farther);
     //oprators

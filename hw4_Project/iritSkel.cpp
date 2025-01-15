@@ -237,10 +237,15 @@ bool CGSkelStoreData(IPObjectStruct* PObj_src, Geometry** PGeom_dest)
 
 	}
 
-
+	
 	if (CGSkelGetObjectTransp(PObj_src, &Transp))
 	{
-		/* transparency code */
+		std::cout << "this object has transperency" << std::endl;
+		color.setAlpha((uint8_t)Transp);
+	}
+	else
+	{
+		std::cout << "this object doesnt have transperency" << std::endl;
 	}
 	if ((Str = CGSkelGetObjectTexture(PObj_src)) != NULL)
 	{

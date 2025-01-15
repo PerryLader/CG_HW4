@@ -58,6 +58,7 @@
 #define ID_LIGHT_SHADING_FLAT           32781
 #define ID_LIGHT_SHADING_GOURAUD        32782
 #define ID_LIGHT_CONSTANTS              32783
+#define ID_OBJ_TRANSP					32784
 #define ID_ANIM_PLAY                    32793
 #define ID_ANIM_CLEAR                   32794
 #define ID_ANIM_SNAPSHOT                32795
@@ -98,6 +99,20 @@
 #define ID_RENDER_BFCULL                32835
 #define ID_RENDER_DYAMIC                32836
 #define ID_FOG_COLOR                    32837
+#define IDD_OBJECTS_DLG                 32900
+#define IDC_RADIO_OBJECT1               32901
+#define IDC_RADIO_OBJECT2               32902
+#define IDC_RADIO_OBJECT3               32903
+#define IDC_RADIO_OBJECT4               32904
+#define IDC_RADIO_OBJECT5               32905
+#define IDC_RADIO_OBJECT6               32906
+#define IDC_RADIO_OBJECT7               32907
+#define IDC_RADIO_OBJECT8               32908
+#define IDC_RADIO_OBJECT9               32909
+
+
+#define IDC_OBJECT_NAME                 32910
+#define IDC_OBJECT_ALPHA                32911 
 
 // Next default values for new objects
 // 

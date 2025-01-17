@@ -16,6 +16,8 @@ private:
     Vector3 m_viewPos;
     bool m_isperspective;
     Matrix4 m_mat_inv;
+    static void perThreadApllyShading(uint32_t* dest, std::multiset<gData, CompareZIndex>* gBuffer, int width, int startRow, int endRow, const RenderMode& rd,const Shader *shader);
+
 	//virtual void scanConvertion() = 0;
 public:
     //virtual void draw(std::vector<Geometry*> objs) = 0;
@@ -25,6 +27,7 @@ public:
     void setFogColor(const ColorGC& color);
     ColorGC getFogColor()const;
     void updateLighting(LightParams lights[MAX_LIGHT], LightParams ambient, int sceneSpecExp);
+
 
     void setView(const Vector3& camera_pos, const Matrix4& mat_inv , bool isPerspective) {
         m_viewPos = camera_pos;

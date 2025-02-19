@@ -32,6 +32,9 @@ public:
     void executeCommand(ScreenCommand* command);
     void setFogColor(const ColorGC& color);
     ColorGC getFogColor()const;
+    void startRecording() { m_keyTransformations.push_back(std::pair<std::vector<Matrix4>, Camera*>()); m_movieMaker = true; }
+    void stopRecording() { if(!m_keyTransformations.empty()) m_keyTransformations.back().second = m_cameras[m_primaryCameraIndex]->clone(); m_movieMaker = false; }
+    void produceMovie(int width, int height, int fps, int length, bool linear, RenderMode& rm);
     void applyToObjectSpace(const Matrix4& tMat);
     void applyToCamera(const Matrix4& tMat);
     void setCamera(CAMERA_TYPE cameraType);
@@ -40,23 +43,18 @@ public:
     int getNumOfObjects()const;
     void setAlphaValues(std::vector<std::pair<std::string, int>> table);
     std::vector<std::pair<std::string, int>> getObjNameTable()const;
-    void handleTransformationAction(int dx, int dy,
-         float aspectRatio,
-         int action,
-         int axis,
-         float sensitivity,
-         int tSpace,
-        int width,
-        int height,
-        float depth);
-
+    void handleTransformationAction(float dx, float dy, float aspectRatio, int action, int axis,
+                                    float sensitivity, int tSpace);
     void print() const;
 
 private:
     std::vector<Model*> m_models;
     std::vector<Camera*> m_cameras;
-    Renderer* m_renderer;    
+    std::vector<std::pair<std::vector<Matrix4>, Camera*>> m_keyTransformations;
+    Renderer* m_renderer;
     int m_primaryCameraIndex;
+    bool m_movieMaker; 
 };
 
 #endif // SCENE_H
+

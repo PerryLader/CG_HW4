@@ -56,6 +56,8 @@ private:
 
 	RenderCommand createRenderingCommand(int width, int height);
 	TransformationCommand createTransformationCommand(const Vector3& point);
+	MovieCommand createMovieCommand(int fps, int length, bool linear);
+
 	// Overrides
 		// ClassWizard generated virtual function overrides
 		//{{AFX_VIRTUAL(CCGWorkView)
@@ -149,7 +151,6 @@ protected:
 	afx_msg void OnTransformationSpace();
 	afx_msg void OnUpdateTransformationSpace(CCmdUI* pCmdUI);
 	afx_msg void OnViewAngle();
-	afx_msg void OnUpdateViewAngle(CCmdUI* pCmdUI);
 	afx_msg void OnTessellation();
 	afx_msg void OnSensitivity();
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
@@ -183,6 +184,14 @@ protected:
 	afx_msg void OnUpdateBackFaceCull(CCmdUI* pCmdUI);
 	afx_msg void OnRenderDynamic();
 	afx_msg void OnUpdateRenderDynamic(CCmdUI* pCmdUI);
+	/// <summary>
+	/// 
+	/// </summary>
+	afx_msg void OnRecord();
+	afx_msg void OnUpdateRecord(CCmdUI* pCmdUI);
+	afx_msg void OnSetMovieParams();
+	afx_msg void OnCreateMovie();
+	afx_msg void OnUpdateCreateMovie(CCmdUI* pCmdUI);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 public:

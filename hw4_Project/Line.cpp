@@ -117,7 +117,7 @@ bool Line::clip()
     return false;
 }
 
-void Line::draw(std::multiset<gData, CompareZIndex>* gBuffer,int width,int hight)const
+void Line::draw(GBuffer& gBuffer,int width,int hight)const
 {
     // Calculate differences
     int halfWidth = width / 2;
@@ -140,7 +140,7 @@ void Line::draw(std::multiset<gData, CompareZIndex>* gBuffer,int width,int hight
         {
             float t = (x1 - (m_a.x * halfWidth) + halfWidth) / ((m_b.x * halfWidth) + halfWidth - (m_a.x * halfWidth) + halfWidth);
             float interpolatedZ = (m_a.z * (1 - t)) + t * m_b.z;            
-            gBuffer[(y1 * width) + x1].insert(gData(interpolatedZ,nullptr,color,Vector3(-5,-5,3333),0,pixType::FROM_LINE));
+            gBuffer.push(x1,y1,GData(interpolatedZ,nullptr,color,Vector3(-5,-5,3333),0,pixType::FROM_LINE));
         }
         
         // Break when we reach the end point
@@ -162,7 +162,7 @@ void Line::draw(std::multiset<gData, CompareZIndex>* gBuffer,int width,int hight
     }
 }
 
-void Line::drawSilhoutte(uint32_t* m_Buffer, std::multiset<gData, CompareZIndex>* m_GBuffer, int width, int hight) const
+void Line::drawSilhoutte(GBuffer& gBuffer, int width, int hight) const
 {
     // Calculate differences
     int halfWidth = width / 2;
@@ -189,25 +189,25 @@ void Line::drawSilhoutte(uint32_t* m_Buffer, std::multiset<gData, CompareZIndex>
             
                 if (x1 != 1 && x1 != 0)
                 {
-                    m_GBuffer[(y1 * width) + (x1 - 1)].insert(gData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
-                    m_GBuffer[(y1 * width) + (x1 - 2)].insert(gData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
+                    gBuffer.push(x1-1, y1 ,GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
+                    gBuffer.push(x1-2, y1, GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
                 }
                 if (x1 != width - 2 && x1 != width - 1)
                 {
-                    m_GBuffer[(y1 * width) + (x1 + 1)].insert(gData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
-                    m_GBuffer[(y1 * width) + (x1 + 2)].insert(gData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
+                    gBuffer.push(x1 + 1, y1, GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
+                    gBuffer.push(x1 + 2, y1, GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
                 }
                 if (y1 != 1 && y1 != 0)
                 {
-                    m_GBuffer[((y1 - 1) * width) + x1].insert(gData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
-                    m_GBuffer[((y1 - 2) * width) + x1].insert(gData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
+                    gBuffer.push(x1, y1-1, GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
+                    gBuffer.push(x1, y1-2, GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
                 }
                 if (y1 != hight - 2 && y1 != hight - 1)
                 {
-                    m_GBuffer[((y1 + 1) * width) + x1].insert(gData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
-                    m_GBuffer[((y1 + 2) * width) + x1].insert(gData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
+                    gBuffer.push(x1, y1+1, GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
+                    gBuffer.push(x1, y1+1,GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
                 }
-                m_GBuffer[(y1 * width) + x1].insert(gData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
+                gBuffer.push(x1, y1, GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
         }
 
         // Break when we reach the end point

@@ -2,9 +2,9 @@
 #include <cstring> // For memset
 #include <iostream>
 #include <algorithm> // For std::sort
+#include <chrono>
 
 Renderer::Renderer():m_Buffer(nullptr),
-m_GBuffer(nullptr),
 m_BgBuffer(nullptr),
 m_shader(),
 m_width(0),
@@ -16,26 +16,26 @@ m_bgInfo({ BG_MODE::SOLID,"",ColorGC(230,230,230) }) {
 Renderer::~Renderer() {
     clear(true);
 }
-void Renderer::drawWireFrame(std::vector<Line> lines[LineVectorIndex::LAST])
+void Renderer::drawWireFrame(std::vector<Line> lines[LineVectorIndex::LAST], GBuffer& gBuff)
 {
    
     for (int i = LineVectorIndex::SHAPES; i < LineVectorIndex::LAST; i++) {        
         for (Line& line : lines[i]) {
             if (line.clip())
             {   
-                line.draw(m_GBuffer, m_width, m_height);
+                line.draw(gBuff, m_width, m_height);
             }
         }
     }
 }
 
-void Renderer::drawSilhoutteEdges(const std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual>& SilhoutteMap)
+void Renderer::drawSilhoutteEdges(const std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual>& SilhoutteMap, GBuffer& gBuff)
 {    
     for (auto& pair : SilhoutteMap)
     {
         if (pair.second == EdgeMode::SILHOUTTE)
         {
-            pair.first.drawSilhoutte(m_Buffer, m_GBuffer, this->m_width, this->m_height);
+            pair.first.drawSilhoutte(gBuff, this->m_width, this->m_height);
         }
     }
 }
@@ -61,9 +61,18 @@ bool Renderer::isvalidBG(const RenderMode& bg_info) {
     return true;
 }
 void Renderer::invalidate(const RenderMode& bg_info, bool force) {
+    auto start = std::chrono::high_resolution_clock::now();
     createBuffers();
-    if(force || !isvalidBG(bg_info))
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "CreateBuffers execution time: " << duration.count() << " ms" << std::endl;
+    if (force || !isvalidBG(bg_info)) {
+        start = std::chrono::high_resolution_clock::now();
         invalidateBG(bg_info);
+        end = std::chrono::high_resolution_clock::now();
+        duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        std::cout << "BG execution time: " << duration.count() << " ms" << std::endl;
+    }
 }
 void Renderer::updateLighting(LightParams lights[MAX_LIGHT], LightParams ambient, int sceneSpecExp) {
     m_shader.updateLighting(lights , ambient, sceneSpecExp);
@@ -76,60 +85,72 @@ void Renderer::render(const Camera* camera, int width, int height, const std::ve
         setWidth(width); setHeight(height);
         forceAll = true;
     }
-   
+    auto start = std::chrono::high_resolution_clock::now();
     invalidate(renderMode, forceAll);
-   
     memcpy(m_Buffer, m_BgBuffer, sizeof(uint32_t) * m_width * m_height);
+    GBuffer gBuffer(m_width, m_height);
+    auto end = std::chrono::high_resolution_clock::now();
+    // Calculate the elapsed time in milliseconds
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "Invalidation execution time: " << duration.count() << " ms" << std::endl;
 
     Matrix4 aspectRatioMatrix = Matrix4::scaling(Vector3(1.0f / (width / height), 1.0f, 1.0f));
     const Matrix4 projectionAspectMatrix = aspectRatioMatrix * camera->getProjectionMatrix();
     const Matrix4 viewProjectionMatrix = projectionAspectMatrix  * camera->getViewMatrix();
     const Matrix4 projectionAspectMatrix_inv = projectionAspectMatrix.irit_inverse();
-    if (renderMode.getRenderAddKeyFrame()) {
-        //m_keyFrames.push_back(std::pair<Matrix4, Vector3>(viewProjectionMatrix, camera->getLocation()));
-        renderMode.setRenderAddKeyFrame();
-    }
     // Transform and cull geometry
     std::vector<Geometry*> transformedGeometries;
-    std::vector<Line> lines[LineVectorIndex::LAST];
-    std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual> SilhoutteMap;
-    
     Vector3 cameraPos = camera->getViewMatrix().irit_inverse().getCol(3);
     m_shader.setView(cameraPos, projectionAspectMatrix_inv, camera->isPerspective());
     //m_shader.applyTransformationToLights(viewProjectionMatrix);
     for (const auto& model : models) {
+        std::vector<Line> lines[LineVectorIndex::LAST];
+        std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual> SilhoutteMap;
         Geometry* transformedGeometry;
         transformedGeometry = model->applyTransformation(viewProjectionMatrix, renderMode.getRenderWithFlipedNormalsFlag());
         if (transformedGeometry) {
-            transformedGeometry->clip();            
+            start = std::chrono::high_resolution_clock::now();
+            transformedGeometry->clip();      
+            end = std::chrono::high_resolution_clock::now();
+            duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            std::cout << "Clip execution time: " << duration.count() << " ms" << std::endl;
+            start = std::chrono::high_resolution_clock::now();
             transformedGeometry->backFaceCulling(camera->isPerspective(), projectionAspectMatrix_inv);
+            end = std::chrono::high_resolution_clock::now();
+            duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            std::cout << "BackFace execution time: " << duration.count() << " ms" << std::endl;
+            start = std::chrono::high_resolution_clock::now();
             transformedGeometry->fillBasicSceneColors(m_shader,renderMode);
+            end = std::chrono::high_resolution_clock::now();
+            duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            std::cout << "FillColors execution time: " << duration.count() << " ms" << std::endl;
+            start = std::chrono::high_resolution_clock::now();
             transformedGeometry->loadLines(lines, renderMode, SilhoutteMap);
-            if(!renderMode.getRenderShadeNoneFlag()) transformedGeometry->fillGbuffer(m_GBuffer, m_width, m_height , renderMode);
+            this->drawWireFrame(lines, gBuffer);
+            end = std::chrono::high_resolution_clock::now();
+            duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            std::cout << "Lines execution time: " << duration.count() << " ms" << std::endl;
+            start = std::chrono::high_resolution_clock::now();
+            if(!renderMode.getRenderShadeNoneFlag()) transformedGeometry->fillGbuffer(gBuffer , renderMode);
+            end = std::chrono::high_resolution_clock::now();
+            duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            std::cout << "FillGbuffer execution time: " << duration.count() << " ms" << std::endl;
+            if (renderMode.getSilohetteFlag()) this->drawSilhoutteEdges(SilhoutteMap, gBuffer);
             transformedGeometries.push_back(transformedGeometry);
         }
     }
-    lines[LineVectorIndex::SHAPES].push_back(Line((viewProjectionMatrix * Vector4(-1, 0, 0, 1)).toVector3(), (viewProjectionMatrix * Vector4(1, 0, 0, 1)).toVector3(), ColorGC(255, 0, 0)));
-    lines[LineVectorIndex::SHAPES].push_back(Line((viewProjectionMatrix * Vector4(0, -1, 0, 1)).toVector3(), (viewProjectionMatrix * Vector4(0, 1, 0, 1)).toVector3(), ColorGC(0, 255, 0)));
-    lines[LineVectorIndex::SHAPES].push_back(Line((viewProjectionMatrix * Vector4(0, 0, -1, 1)).toVector3(), (viewProjectionMatrix * Vector4(0, 0, 1, 1)).toVector3(), ColorGC(0, 0, 255)));
-   
-    this->drawWireFrame(lines);
-    m_shader.applyShading(m_Buffer, m_GBuffer, m_width, m_height, renderMode);
-
-
-    if (renderMode.getSilohetteFlag()) this->drawSilhoutteEdges(SilhoutteMap);
-
+    //lines[LineVectorIndex::SHAPES].push_back(Line((viewProjectionMatrix * Vector4(-1, 0, 0, 1)).toVector3(), (viewProjectionMatrix * Vector4(1, 0, 0, 1)).toVector3(), ColorGC(255, 0, 0)));
+    //lines[LineVectorIndex::SHAPES].push_back(Line((viewProjectionMatrix * Vector4(0, -1, 0, 1)).toVector3(), (viewProjectionMatrix * Vector4(0, 1, 0, 1)).toVector3(), ColorGC(0, 255, 0)));
+    //lines[LineVectorIndex::SHAPES].push_back(Line((viewProjectionMatrix * Vector4(0, 0, -1, 1)).toVector3(), (viewProjectionMatrix * Vector4(0, 0, 1, 1)).toVector3(), ColorGC(0, 0, 255)));
+    m_shader.applyShading(m_Buffer, gBuffer, renderMode);
     for (const auto& geo : transformedGeometries) {
         delete geo;
     }
-
 }
 
 void Renderer::clear(bool clearBg) {
     delete[] m_Buffer;
     m_Buffer = nullptr;
-    delete[] m_GBuffer;
-    m_GBuffer = nullptr;
     if(clearBg){
         delete[] m_BgBuffer;
         m_BgBuffer = nullptr;
@@ -143,11 +164,10 @@ uint32_t* Renderer::getBuffer() const{
 void Renderer::createBuffers() {
     clear(false);
     m_Buffer = new uint32_t[m_width * m_height]; // RGB buffer
-    m_GBuffer = new std::multiset<gData, CompareZIndex>[m_width * m_height]; // Z-buffer
-    std::multiset<gData, CompareZIndex> initGdataObj;
+    //std::multiset<gData, CompareZIndex> initGdataObj;
     //initGdataObj.insert(gData(FLT_MAX,nullptr,m_bgInfo.color,Vector3(),Vector3(),pixType::FROM_BACKGROUND));
-    std::fill(m_GBuffer, m_GBuffer + (m_width * m_height), initGdataObj);
-    std::memset(m_Buffer, 0, sizeof(uint32_t) * m_width * m_height);
+    //std::fill(m_GBuffer, m_GBuffer + (m_width * m_height), initGdataObj);
+    //std::memset(m_Buffer, 0, sizeof(uint32_t) * m_width * m_height);
 }
 void Renderer::fillColorBG() {
     for (int i = 0; i < m_width; i++)
@@ -216,38 +236,3 @@ ColorGC Renderer::getFogColor() const
 {
     return this->m_shader.getFogColor();
 }
-
-
-void Renderer::generateMovie(double movieLength, double frameRate, const std::vector<Model*> models, RenderMode& renderMode) {
-    Matrix4 tMat;
-    Vector3 camPos;
-    std::vector<double> timeVec = generateTimeVector(movieLength, frameRate);
-    // Transform and cull geometry
-    for (int i = 0; i < timeVec.size(); i++) {
-        //interpolateTmatAndCameraPos(tMat, camPos, timeVec[i]);
-        std::vector<Geometry*> transformedGeometries;
-        //m_shader.setViewPos(camPos);
-
-        for (const auto& model : models) {
-            Geometry* transformedGeometry = model->applyTransformation(tMat, renderMode.getRenderWithFlipedNormalsFlag());
-            if (transformedGeometry) {
-                transformedGeometry->clip();
-        //        transformedGeometry->backFaceCulling(camPos);
-                transformedGeometry->fillBasicSceneColors(m_shader, renderMode);
-                transformedGeometry->fillGbuffer(m_GBuffer, m_width, m_height, renderMode);
-                transformedGeometries.push_back(transformedGeometry);
-            }
-        }
-
-        memcpy(m_Buffer, m_BgBuffer, sizeof(uint32_t) * m_width * m_height);
-        m_shader.applyShading(m_Buffer, m_GBuffer, m_width, m_height, renderMode);
-
-        // Save frame to PNG or some other file
-        // (You need to implement the frame saving logic here)
-
-        for (const auto& geo : transformedGeometries) {
-            delete geo;
-        }
-    }
-}
-

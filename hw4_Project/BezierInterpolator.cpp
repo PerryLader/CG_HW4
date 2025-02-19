@@ -1,4 +1,4 @@
-//#include "BezierInterpolator.h"
+#include "BezierInterpolator.h"
 //
 //// Function to compute combinations using precomputed factorials
 //static long long combination(int n, int k, const std::vector<long long>& factorials) {
@@ -25,7 +25,7 @@
 //}
 //
 //// Method to set the order of the Bezier curve
-//void BezierInterpolator::setOrder(int n) {
+//BezierInterpolator::BezierInterpolator(int n) {
 //    precomputeFactorials(n);
 //    precomputeCoefs(n);
 //}
@@ -38,12 +38,65 @@
 //    return 0.0; // Return 0 if index is out of bounds
 //}
 //
-//template <typename T> T BezierInterpolator::interpolate(const std::vector<T>& objList, double t) const {
-//    int n = objList.size() - 1;
-//    T result = T();
-//    for (int i = 0; i <= n; ++i)
-//    {
-//        result += getIthCoef(i, t) * objList[i];
-//    }
-//    return result;
-//}
+
+
+BSplineInterpolator::BSplineInterpolator(int n, const std::vector<int>& keyframeCounts, bool linear) {
+    int maxSegmentLength = *std::max_element(keyframeCounts.begin(), keyframeCounts.end());
+    degree = linear ? 1 : (maxSegmentLength - 1); // Set degree to 1 for linear, otherwise to max segment length - 1 for Bezier behavior
+    generateKnotsWithContinuity(keyframeCounts, linear);
+    cumulativeKeyframeCounts = calculateCumulativeKeyframeCounts(keyframeCounts);
+}
+
+void BSplineInterpolator::generateKnotsWithContinuity(const std::vector<int>& keyframeCounts, bool linear) {
+    int totalFrames = std::accumulate(keyframeCounts.begin(), keyframeCounts.end(), 0);
+    int numKnots = totalFrames + degree + 1;
+
+    knots.resize(numKnots);
+
+    double cumulativeTime = 0.0;
+    int index = 0;
+
+    for (int setLength : keyframeCounts) {
+        double setTimeIncrement = static_cast<double>(setLength) / totalFrames;
+        for (int j = 0; j < setLength; ++j) {
+            knots[index++] = cumulativeTime;
+        }
+        cumulativeTime += setTimeIncrement;
+    }
+
+    // Ensure uniform distribution of knots at the boundaries
+    for (int i = 0; i <= degree; ++i) {
+        knots[numKnots - 1 - i] = 1.0;
+        knots[i] = 0.0;
+    }
+}
+
+std::vector<double> BSplineInterpolator::calculateCumulativeKeyframeCounts(const std::vector<int>& keyframeCounts) {
+    std::vector<double> cumulativeKeyframeCounts(keyframeCounts.size() + 1, 0.0);
+    std::partial_sum(keyframeCounts.begin(), keyframeCounts.end(), cumulativeKeyframeCounts.begin() + 1);
+    return cumulativeKeyframeCounts;
+}
+
+int BSplineInterpolator::findSetIndex(double t) const {
+    for (int i = 1; i < cumulativeKeyframeCounts.size(); ++i) {
+        if (t < cumulativeKeyframeCounts[i] / cumulativeKeyframeCounts.back()) {
+            return i - 1;
+        }
+    }
+    return cumulativeKeyframeCounts.size() - 2;
+}
+
+double BSplineInterpolator::getBSplineBasis(int i, int k, double t) const {
+    if (k == 0) {
+        return (knots[i] <= t && t < knots[i + 1]) ? 1.0 : 0.0;
+    }
+    else {
+        double coef1 = (t - knots[i]) / (knots[i + k] - knots[i]);
+        double coef2 = (knots[i + k + 1] - t) / (knots[i + k + 1] - knots[i + 1]);
+
+        double term1 = (knots[i + k] != knots[i]) ? coef1 * getBSplineBasis(i, k - 1, t) : 0.0;
+        double term2 = (knots[i + k + 1] != knots[i + 1]) ? coef2 * getBSplineBasis(i + 1, k - 1, t) : 0.0;
+
+        return term1 + term2;
+    }
+}

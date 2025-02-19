@@ -16,13 +16,13 @@ private:
     Vector3 m_viewPos;
     bool m_isperspective;
     Matrix4 m_mat_inv;
-    static void perThreadApllyShading(uint32_t* dest, std::multiset<gData, CompareZIndex>* gBuffer, int width, int startRow, int endRow, const RenderMode& rd,const Shader *shader);
+    static void perThreadApllyShading(uint32_t* dest, GBuffer* gBuff, std::unordered_map<std::pair<size_t, size_t>, std::reference_wrapper<GBuffer::SetType>, PairHash>& gLists, const RenderMode& rd, const Shader* shader);
 
 	//virtual void scanConvertion() = 0;
 public:
     //virtual void draw(std::vector<Geometry*> objs) = 0;
     ColorGC calcLightColorAtPos(Vector3 pos, Vector3 normal, ColorGC colorBeforeLight) const;
-    void applyShading(uint32_t* dest,  std::multiset<gData, CompareZIndex>* gBuffer, int width, int height, const RenderMode& rd) const;
+    void applyShading(uint32_t* dest, GBuffer& gBuff, const RenderMode& rd) const;
     Shader();
     void setFogColor(const ColorGC& color);
     ColorGC getFogColor()const;

@@ -464,17 +464,16 @@ int findIntersectionAndFitToScreen(std::pair<std::shared_ptr<Vertex>, std::share
 
 
 
-void PolygonGC::fillGbuffer(std::multiset<gData, CompareZIndex>* gBuffer, int width, int hight, const RenderMode& rm) const
+void PolygonGC::fillGbuffer(GBuffer& gBuffer, const RenderMode& rm) const
 {
-    //override color?
-    //TODO
+    int width = gBuffer.getWidth(); 
+    int hight = gBuffer.getHeight();
     std::vector<std::pair<std::shared_ptr<Vertex>,std::shared_ptr<Vertex>>> lineVector;
-
     this->loadVertexEdgesToContainer(lineVector, nullptr);
     int halfWidth = width / 2;
     int halfhight = hight / 2;
-    int yMax = min((int)(((m_bbox.getMax().y * halfhight) + halfhight) ), hight);
-    int yMin = max(((m_bbox.getMin().y * halfhight) + halfhight) ,0);
+    int yMax = min((int)(((m_bbox.getMax().y * halfhight) + halfhight) ) + 1, hight);
+    int yMin = max(((m_bbox.getMin().y * halfhight) + halfhight) - 1 ,0);
 
     std::sort(lineVector.begin(), lineVector.end(), []
     (const std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>&a ,
@@ -505,8 +504,8 @@ void PolygonGC::fillGbuffer(std::multiset<gData, CompareZIndex>* gBuffer, int wi
                 biggestVecX = biggestVecX.loc().x > vetrexPair.second->loc().x ? biggestVecX : *vetrexPair.second;
             }            
         }
-        int smallX = max(0,transformToScreenSpace(samllestVecX.loc().x, halfWidth));
-        int bigX = min(width,transformToScreenSpace(biggestVecX.loc().x, halfWidth));
+        int smallX = max(0,transformToScreenSpace(samllestVecX.loc().x, halfWidth) - 1);
+        int bigX = min(width,transformToScreenSpace(biggestVecX.loc().x, halfWidth) + 1);
 
         for (int x = smallX; x < bigX; x++)
         {
@@ -517,32 +516,22 @@ void PolygonGC::fillGbuffer(std::multiset<gData, CompareZIndex>* gBuffer, int wi
                 tmp = interpolatedVertex.getDataNormalLine();
             else
                 tmp = interpolatedVertex.getCalcNormalLine();    
-            gBuffer[(y * width) + x].insert(gData(interpolatedVertex.loc().z, this, interpolatedVertex.getColor(), tmp.m_a, tmp.direction(), pixType::FROM_POLYGON));
+            gBuffer.push(x, y, GData(interpolatedVertex.loc().z, this, interpolatedVertex.getColor(), tmp.m_a, tmp.direction(), pixType::FROM_POLYGON));
         }
     }
 }
 
 void PolygonGC::fillBasicSceneColors(const Shader& shader,const RenderMode& rm)
 {
+    if (rm.getVertexUseCNormalFlag())
         for (auto& vert : m_vertices)
-        {
-            if(rm.getVertexUseCNormalFlag())
-            {
-                vert->setColor(shader.calcLightColorAtPos(vert->loc(), vert->getCalcNormalLine().direction(), this->getColor()));
-            }
-            else
-            {
-                vert->setColor(shader.calcLightColorAtPos(vert->loc(), vert->getDataNormalLine().direction(), this->getColor()));
-            }
-        }
-        if (rm.getPolygonsUseCNormalFlag())
-        {
-            setSceneColor(shader.calcLightColorAtPos(m_calcNormalLine.m_a, m_calcNormalLine.direction(), this->getColor()));
-        }
-       else
-       {
+           vert->setColor(shader.calcLightColorAtPos(vert->loc(), vert->getCalcNormalLine().direction(), this->getColor()));
+    else
+        for (auto& vert : m_vertices)
+           vert->setColor(shader.calcLightColorAtPos(vert->loc(), vert->getDataNormalLine().direction(), this->getColor()));
+    rm.getPolygonsUseCNormalFlag() ?
+            setSceneColor(shader.calcLightColorAtPos(m_calcNormalLine.m_a, m_calcNormalLine.direction(), this->getColor())) :
             setSceneColor(shader.calcLightColorAtPos(m_dataNormalLine.m_a, m_dataNormalLine.direction(), this->getColor()));
-       }
 }
 
 void PolygonGC::flipNormals()

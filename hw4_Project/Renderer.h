@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include "Modules.h"
 #include "BezierInterpolator.h"
+#include "GBuffer.h"
 
 class Renderer
 {
@@ -29,7 +30,6 @@ public:
 
 private:
     uint32_t* m_Buffer; // RGB by width by height;
-    std::multiset<gData, CompareZIndex>* m_GBuffer; // gData width by height;
     uint32_t* m_BgBuffer; // width by height;
     int m_width, m_height;
     bgInfo m_bgInfo;
@@ -38,9 +38,9 @@ private:
     std::vector<Vector3> m_keyCameraPos;
     //BezierInterpolator interpolator;
 
-    void drawWireFrame(std::vector<Line> lines[LineVectorIndex::LAST]);
+    void drawWireFrame(std::vector<Line> lines[LineVectorIndex::LAST], GBuffer& gBuff);
     void drawSolid(Shader& shader);
-    void drawSilhoutteEdges(const std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual>& SilhoutteMap);
+    void drawSilhoutteEdges(const std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual>& SilhoutteMap, GBuffer& gBuff);
 
     void setWidth(int width) { m_width = width;};
     void setHeight(int height) { m_height = height;};

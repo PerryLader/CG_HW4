@@ -7,7 +7,7 @@
 class ScreenCommand {
 public:
     ScreenCommand(int width, int height) : screenWidth(width), screenHeigth(height) {}
-    virtual ~ScreenCommand(){}
+    virtual ~ScreenCommand() {}
     virtual void execute(Scene& scene) = 0;
 protected:
     int screenWidth;
@@ -17,7 +17,7 @@ protected:
 class RenderCommand : public ScreenCommand {
 public:
     virtual ~RenderCommand() {}
-    RenderCommand(int width, int height, RenderMode& rd_mode) : ScreenCommand(width, height), rd_mode(rd_mode){}
+    RenderCommand(int width, int height, RenderMode& rd_mode) : ScreenCommand(width, height), rd_mode(rd_mode) {}
     virtual void execute(Scene& scene) override {
         scene.render(screenWidth, screenHeigth, rd_mode);
     }
@@ -28,26 +28,40 @@ protected:
 class TransformationCommand : public ScreenCommand {
 public:
     TransformationCommand(int width, int height, int dx, int dy,
-        float aspectRatio,int action, int axis,int tSpace, 
-        float sensitivity, float depth)
-        : ScreenCommand(width,height)
-        , dx(dx), dy(dy), aspectRatio(aspectRatio),
-        action(action), axis(axis), tSpace(tSpace), sensitivity(sensitivity) , depth(depth) {}
+        float aspectRatio, int action, int axis, int tSpace,
+        float sensitivity)
+        : ScreenCommand(width, height)
+        , dx((float)dx / width), dy((float)dy / height), aspectRatio(aspectRatio),
+        action(action), axis(axis), tSpace(tSpace), sensitivity(sensitivity) {}
 
     void execute(Scene& scene) override {
-        scene.handleTransformationAction(dx,dy, aspectRatio,action, axis, sensitivity,tSpace, screenWidth, screenHeigth,depth);
+        scene.handleTransformationAction(dx, dy, aspectRatio, action, axis, sensitivity, tSpace);
     }
 protected:
-    int dx;
-    int dy;
+    float dx;
+    float dy;
     float aspectRatio;
     int action;
     int axis;
     int tSpace;
     float sensitivity;
-    float depth;
+};
+
+class MovieCommand : public ScreenCommand {
+public:
+    MovieCommand(int width, int height, int fps, int movie_length, bool linear, RenderMode& rd_mode)
+        : ScreenCommand(width, height), fps(fps), movie_length(movie_length), linear(linear), rd_mode(rd_mode){}
+    void execute(Scene& scene) override {
+            scene.produceMovie( screenWidth, screenHeigth, fps, movie_length, linear, rd_mode);
+    }
+protected:
+    int fps;
+    int movie_length;
+    bool linear;
+    RenderMode& rd_mode;
 };
 #endif //COMMANDS_H
+
 
 //
 //class ViewCommand : public ICommand {

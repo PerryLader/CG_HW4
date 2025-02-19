@@ -12,38 +12,35 @@ public:
     Camera(float nearPlane, float farPlane);
 
     // Function to set the view transformation matrix
-    void setViewMatrix(const Matrix4& viewMatrix);
+    void setViewMatrix(const Matrix4& m_viewMatrix);
 
     // Function to get the view transformation matrix
-    const Matrix4& getViewMatrix() const;      
+    const Matrix4& getViewMatrix() const;
 
     // Function to set the camera using LookAt
     void lookAt(const Vector3& eye, const Vector3& target, const Vector3& up);
 
     virtual const Matrix4& getProjectionMatrix() const {
-        throw;
-        return Matrix4();
-    };
+        return m_projectionMatrix;
+    }
 
-    virtual void setFar(float farPlane) {};
-    void Camera::orientate(const Matrix4& tMat);
+    virtual void setFar(float farPlane) {
+        this->m_farPlane = farPlane;
+        setProjection();
+    }
 
     void Camera::translate(const Matrix4& tMat);
-    
+
     // Function to set orthogonal projection
-    virtual void setOrthogonal() { throw; };
 
-    // Function to set perspective projection
-    virtual void setPerspective() { throw; };
+    virtual bool isPerspective() const = 0;
 
-    virtual bool isPerspective() const { throw; };
+    virtual Camera* clone() const = 0;
 
-    Vector3 getLocation() const{ return camera_pos; };
 protected:
-    Matrix4 viewMatrix;
-    Matrix4 orientation;
-    Matrix4 translation;
-    Vector3 camera_pos;
+    virtual void setProjection() = 0;
+    Matrix4 m_projectionMatrix;
+    Matrix4 m_viewMatrix;
     float m_nearPlane;
     float m_farPlane;
 };
@@ -51,14 +48,9 @@ protected:
 class PerspectiveCamera :public Camera
 {
 private:
-    Matrix4 m_projectionMatrix;    
     float m_fov;//field of view on the y 
-    float m_aspect;//aspect
-public:
-    PerspectiveCamera(float fovY, float aspect, float nearPlane, float farPlane) :Camera(nearPlane,farPlane),
-        m_projectionMatrix(Matrix4::identity()),m_fov(fovY),m_aspect(aspect) {}
 
-    void setPerspective() override {
+    void setProjection() override {
         double fovRad = m_fov * (3.14159265358979323846 / 180.0);
 
         // Calculate scale factors
@@ -66,8 +58,8 @@ public:
         double range = m_farPlane - m_nearPlane;
 
         // Calculate matrix elements
-        double m00 = 1.0 / (m_aspect * tanHalfFovY);
-        double m11 = 1.0 / tanHalfFovY;
+        double m00 = 1.0 / tanHalfFovY;
+        double m11 = m00;
         double m22 = -(m_farPlane + m_nearPlane) / range;
         double m23 = -2.0 * m_farPlane * m_nearPlane / range;
         double m32 = -1.0;
@@ -80,42 +72,28 @@ public:
             0.0, 0.0, m32, 0.0
         );
     }
-
-    void setFar(float farPlane)override
-    {
-        this->m_farPlane = farPlane;
-        setPerspective();
+public:
+    PerspectiveCamera(float fovY, float nearPlane, float farPlane) :Camera(nearPlane, farPlane),
+        m_fov(fovY) {
+        setProjection();
     }
-    // Function to get the projection matrix
-    const Matrix4& getProjectionMatrix() const override
-    {
-        return m_projectionMatrix;
+    virtual Camera* clone() const override {
+        return new PerspectiveCamera(*this);
     }
-
-    bool isPerspective() const{ return true; }
+    bool isPerspective() const override { return true; }
 };
 
 class OrthogonalCamera :public Camera
 {
 private:
-    Matrix4 m_projectionMatrix;
-    float m_left ;
-    float m_bottom ;    
-    float m_right ;
-    float m_top ;
+    float m_left;
+    float m_bottom;
+    float m_right;
+    float m_top;
     float m_theta;
     float m_phi;
 
-public:
-    OrthogonalCamera(const Vector3& LBN, const Vector3& RTF, float theta, float phi) :Camera(LBN.z, RTF.z),
-        m_projectionMatrix(Matrix4::identity()),
-        m_left(LBN.x),
-        m_right(RTF.x),
-        m_top(RTF.y),
-        m_bottom(LBN.y) {}
-        
-    void setOrthogonal() override{      
-       
+    void setProjection() override {
         // Orthogonal projection matrix
         m_projectionMatrix = Matrix4(
             (2.0f / (m_right - m_left)), 0, 0, -(m_right + m_left) / (m_right - m_left),
@@ -123,20 +101,19 @@ public:
             0, 0, -2.0f / (m_farPlane - m_nearPlane), -(m_farPlane + m_nearPlane) / (m_farPlane - m_nearPlane),
             0, 0, 0, 1.0f);
     }
-    
 
-    void setFar(float farPlane)override
-    {
-        this->m_farPlane = farPlane;
-        setOrthogonal();
+public:
+    OrthogonalCamera(const Vector3& LBN, const Vector3& RTF) :Camera(LBN.z, RTF.z),
+        m_left(LBN.x),
+        m_right(RTF.x),
+        m_top(RTF.y),
+        m_bottom(LBN.y) {
+        setProjection();
     }
-    // Function to get the projection matrix
-    const Matrix4& getProjectionMatrix() const override
-    {
-        return m_projectionMatrix;
+    virtual Camera* clone() const override {
+        return new OrthogonalCamera(*this);
     }
-    bool isPerspective() const { return false; }
-
+    bool isPerspective() const override { return false; }
 };
 
 

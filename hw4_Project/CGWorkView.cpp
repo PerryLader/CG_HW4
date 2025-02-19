@@ -819,7 +819,10 @@ TransformationCommand CCGWorkView::createTransformationCommand(const Vector3& po
 		point.x - m_ref_point.x,
 		point.y - m_ref_point.y,
 		m_AspectRatio, m_nAction, m_nAxis,
-		m_tSpace, m_sensitivity, m_bIsPerspective ? m_depth : 1);
+		m_tSpace, m_sensitivity);
+}
+MovieCommand CCGWorkView::createMovieCommand(int fps, int length, bool linear){
+	return MovieCommand(m_WindowWidth, m_WindowHeight,fps, length, linear, m_rendermode);
 }
 void CCGWorkView::OnLButtonDown(UINT nFlags, CPoint point) {
 	// Handle the left button down event here

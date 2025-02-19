@@ -88,40 +88,28 @@ void Geometry::createObjBboxLines(std::vector<Line> lines[LineVectorIndex::LAST]
 	std::vector<Line> bBoxLines = this->getBBox().getLinesOfBbox(*wireColor);
 	lines[LineVectorIndex::OBJ_BBOX].insert(lines[LineVectorIndex::OBJ_BBOX].end(), bBoxLines.begin(), bBoxLines.end());	
 }
-
-void Geometry::fillGbuffer(std::multiset<gData, CompareZIndex>* gBuffer, int width, int height , RenderMode& rm) const
-{
-	for (const auto& poly : m_polygons) if (!rm.getRenderCulledFlag() ||rm.getRenderCulledFlag() && poly->isVisible())
+void validateRenderModeToPolyData(bool hasPolyDataNormal, bool hasVertDataNormal, RenderMode& rm) {
+	if (rm.getRenderDynemic())
 	{
-		if (rm.getRenderDynemic())
+		if (hasPolyDataNormal)
 		{
-			if (hasPolyDataNormal)
+			if (rm.getPolygonsUseCNormalFlag())
 			{
-				if (rm.getPolygonsUseCNormalFlag())
-				{
-					rm.setPolygonsUseCNormalFlag();
-				}
+				rm.setPolygonsUseCNormalFlag();
 			}
-			else
+		}
+		else
+		{
+			if (!rm.getPolygonsUseCNormalFlag())
 			{
-				if (!rm.getPolygonsUseCNormalFlag())
-				{
-					rm.setPolygonsUseCNormalFlag();
-				}
+				rm.setPolygonsUseCNormalFlag();
 			}
-			if (hasVertDataNormal)
+		}
+		if (hasVertDataNormal)
+		{
+			if (rm.getVertexUseCNormalFlag())
 			{
-				if (rm.getVertexUseCNormalFlag())
-				{
-					rm.setVertexUseCNormalFlag();
-				}
-			}
-			else
-			{
-				if (!rm.getVertexUseCNormalFlag())
-				{
-					rm.setVertexUseCNormalFlag();
-				}
+				rm.setVertexUseCNormalFlag();
 			}
 		}
 		else
@@ -130,13 +118,33 @@ void Geometry::fillGbuffer(std::multiset<gData, CompareZIndex>* gBuffer, int wid
 			{
 				rm.setVertexUseCNormalFlag();
 			}
-			if (!rm.getPolygonsUseCNormalFlag())
-			{
-				rm.setPolygonsUseCNormalFlag();
-			}
 		}
-		
-		poly->fillGbuffer(gBuffer, width, height, rm);
+	}
+	else
+	{
+		if (!rm.getVertexUseCNormalFlag())
+		{
+			rm.setVertexUseCNormalFlag();
+		}
+		if (!rm.getPolygonsUseCNormalFlag())
+		{
+			rm.setPolygonsUseCNormalFlag();
+		}
+	}
+}
+
+void Geometry::fillGbuffer(GBuffer& gBuffer, RenderMode& rm) const
+{
+	validateRenderModeToPolyData(hasPolyDataNormal, hasVertDataNormal, rm);
+	int height = gBuffer.getHeight();
+	int width = gBuffer.getWidth();
+	int yMax = std::min((int)(((getBBox().getMax().y * height /2) + height / 2)) + 1, height);
+	int yMin = std::max((int)((getBBox().getMin().y * height / 2) + height / 2) - 1, 0);
+	int xMax = std::min((int)(((getBBox().getMax().x * width / 2) + width / 2)) + 1, width);
+	int xMin = std::max((int)((getBBox().getMin().x * width / 2) + width / 2) - 1, 0);
+	gBuffer.allocateBBox(xMin,yMin,xMax,yMax);
+	for (const auto& poly : m_polygons) if (!rm.getRenderCulledFlag() || rm.getRenderCulledFlag() && poly->isVisible()) {
+		poly->fillGbuffer(gBuffer, rm);
 	}
 }
 
@@ -197,50 +205,7 @@ void Geometry::print() const
 
 void Geometry::fillBasicSceneColors(const Shader& shader, RenderMode& rm)
 {
+	validateRenderModeToPolyData(hasPolyDataNormal, hasVertDataNormal, rm);
 		for (auto& poly : m_polygons)
-		{
-			if (rm.getRenderDynemic())
-			{
-				if (hasPolyDataNormal)
-				{
-					if (rm.getPolygonsUseCNormalFlag())
-					{
-						rm.setPolygonsUseCNormalFlag();
-					}
-				}
-				else
-				{
-					if (!rm.getPolygonsUseCNormalFlag())
-					{
-						rm.setPolygonsUseCNormalFlag();
-					}
-				}
-				if (hasVertDataNormal)
-				{
-					if (rm.getVertexUseCNormalFlag())
-					{
-						rm.setVertexUseCNormalFlag();
-					}
-				}
-				else
-				{
-					if (!rm.getVertexUseCNormalFlag())
-					{
-						rm.setVertexUseCNormalFlag();
-					}
-				}	
-			}
-			else
-			{
-				if(!rm.getVertexUseCNormalFlag())
-				{
-					rm.setVertexUseCNormalFlag();
-				}
-				if(!rm.getPolygonsUseCNormalFlag())
-				{
-					rm.setPolygonsUseCNormalFlag();
-				}
-			}
 			poly->fillBasicSceneColors(shader,rm);
-		}
 }

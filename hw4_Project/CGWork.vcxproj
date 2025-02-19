@@ -194,6 +194,7 @@
     </ClCompile>
     <ClCompile Include="ColorGC.cpp" />
     <ClCompile Include="dynamicSliderDialog.cpp" />
+    <ClCompile Include="GBuffer.cpp" />
     <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="iritSkel.cpp" />
     <ClCompile Include="LightDialog.cpp" />
@@ -246,6 +247,7 @@
     <ClInclude Include="CGWorkView.h" />
     <ClInclude Include="ColorGC.h" />
     <ClInclude Include="dynamicSliderDialog.h" />
+    <ClInclude Include="GBuffer.h" />
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="Modules.h" />
     <ClInclude Include="ObjTranspDialog.h" />

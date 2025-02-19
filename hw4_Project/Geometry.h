@@ -35,7 +35,7 @@ public:
 	void setAlpha(uint8_t alpha);
 
 	//UTILS
-	void Geometry::fillGbuffer(GBuffer& gBuffer, RenderMode& rm) const;
+	void Geometry::fillGbuffer(GBuffer& gBuffer, RenderMode& rm, long long& ll1, long long& ll2 , long long& ll3) const;
 	void resetBounds();
 	void loadLines(std::vector<Line> lines[LineVectorIndex::LAST], RenderMode& renderMode, std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual>& SilhoutteMap) const;
 	void addPolygon(PolygonGC* poli);

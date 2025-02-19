@@ -133,7 +133,7 @@ void validateRenderModeToPolyData(bool hasPolyDataNormal, bool hasVertDataNormal
 	}
 }
 
-void Geometry::fillGbuffer(GBuffer& gBuffer, RenderMode& rm) const
+void Geometry::fillGbuffer(GBuffer& gBuffer, RenderMode& rm, long long& ll1, long long& ll2, long long& ll3) const
 {
 	validateRenderModeToPolyData(hasPolyDataNormal, hasVertDataNormal, rm);
 	int height = gBuffer.getHeight();
@@ -144,7 +144,7 @@ void Geometry::fillGbuffer(GBuffer& gBuffer, RenderMode& rm) const
 	int xMin = std::max((int)((getBBox().getMin().x * width / 2) + width / 2) - 1, 0);
 	gBuffer.allocateBBox(xMin,yMin,xMax,yMax);
 	for (const auto& poly : m_polygons) if (!rm.getRenderCulledFlag() || rm.getRenderCulledFlag() && poly->isVisible()) {
-		poly->fillGbuffer(gBuffer, rm);
+		poly->fillGbuffer(gBuffer, rm, ll1, ll2, ll3);
 	}
 }
 

@@ -7,6 +7,9 @@
 #include <mutex>
 #include "ColorGC.h"
 #include "Vector3.h"
+// Define gData structure
+#include <utility>
+#include <functional>
 
 enum pixType {
     FROM_LINE,
@@ -17,7 +20,6 @@ enum pixType {
 class PolygonGC;
 class ColorGC;
 
-// Define gData structure
 struct GData {
     float z_indx;
     const PolygonGC* polygon;
@@ -25,122 +27,79 @@ struct GData {
     Vector3 pixPos;
     Vector3 pixNorm;
     pixType m_pixType;
+    static constexpr double epsilon = 5e-2;
 
     GData(float z, const PolygonGC* p, ColorGC c, Vector3 pos, Vector3 norm, pixType type)
         : z_indx(z), polygon(p), pixColor(c), pixPos(pos), pixNorm(norm), m_pixType(type) {}
-};
 
-// Custom allocator for gData
-template <typename T>
-class CustomAllocator {
-public:
-    using value_type = T;
-
-    CustomAllocator() = default;
-
-    template <typename U>
-    constexpr CustomAllocator(const CustomAllocator<U>&) noexcept {}
-
-    [[nodiscard]] T* allocate(std::size_t n) {
-        if (auto p = static_cast<T*>(::operator new(n * sizeof(T)))) {
-            return p;
-        }
-        throw std::bad_alloc();
+    bool operator<(const GData& other) const {
+        return (std::abs(z_indx - other.z_indx) > GData::epsilon) && z_indx < other.z_indx;
     }
 
-    void deallocate(T* p, std::size_t) noexcept {
-        ::operator delete(p);
-    }
-};
-
-template <typename T, typename U>
-bool operator==(const CustomAllocator<T>&, const CustomAllocator<U>&) { return true; }
-
-template <typename T, typename U>
-bool operator!=(const CustomAllocator<T>&, const CustomAllocator<U>&) { return false; }
-
-// Comparator with epsilon for gData
-struct CompareZIndex {
-    double epsilon = 5e-2;
-    bool operator()(const GData& lhs, const GData& rhs) const {
-        return std::abs(lhs.z_indx - rhs.z_indx) > epsilon && lhs.z_indx < rhs.z_indx;  // Ascending order
-    }
-};
-
-// Custom hash function for std::pair<size_t, size_t>
-struct PairHash {
-    template <typename T1, typename T2>
-    std::size_t operator()(const std::pair<T1, T2>& p) const {
-        auto hash1 = std::hash<T1>{}(p.first);
-        auto hash2 = std::hash<T2>{}(p.second);
-        return hash1 ^ (hash2 << 1); // Combine the two hash values
+    bool shouldReplace(const GData& other) const {
+        return std::abs(z_indx - other.z_indx) <= GData::epsilon && z_indx < other.z_indx;
     }
 };
 
 class GBuffer {
-public:
-    using SetType = std::set<GData, CompareZIndex, CustomAllocator<GData>>;
+private:
+    int getKey(int x, int y) const {
+        return y * width_ + x;
+    }
 
-    GBuffer(size_t width, size_t height) : width_(width), height_(height), emptySet() {}
+public:
+    using SetType = std::set<GData>;
+    using BufferType = std::unordered_map<int, SetType>;
+
+    GBuffer(size_t width, size_t height) : width_(width), height_(height) {}
 
     ~GBuffer() = default;
 
     void allocateBBox(size_t x1, size_t y1, size_t x2, size_t y2) {
-     //   std::lock_guard<std::mutex> lock(mutex_);
-        for (size_t x = x1; x <= x2; ++x) {
-            for (size_t y = y1; y <= y2; ++y) {
-                buffer_[std::make_pair(x, y)];
-            }
-        }
+        size_t totalSize = (x2 - x1 + 1) * (y2 - y1 + 1);
+        buffer_.reserve(totalSize);
     }
 
     void push(size_t x, size_t y, const GData& data) {
-    //    std::lock_guard<std::mutex> lock(mutex_);
         if (x < width_ && y < height_) {
-            buffer_[std::make_pair(x, y)].insert(data);
+            auto& set = buffer_[getKey(x, y)];
+            auto it = set.find(data);
+            if (it != set.end() && data.shouldReplace(*it)) {
+                set.erase(it);
+            }
+            set.insert(data);
         }
     }
 
     SetType& get(size_t x, size_t y) {
-     //   std::lock_guard<std::mutex> lock(mutex_);
-        auto it = buffer_.find(std::make_pair(x, y));
+        auto it = buffer_.find(getKey(x, y));
         if (it != buffer_.end()) {
             return it->second;
         }
-        return emptySet;
+        return emptySet_;
     }
-    std::vector<std::unordered_map<std::pair<size_t, size_t>, std::reference_wrapper<GBuffer::SetType>, PairHash>> getNParts(size_t n) const {
-        std::vector<std::unordered_map<std::pair<size_t, size_t>, std::reference_wrapper<GBuffer::SetType>, PairHash>> parts(n);
+
+    const SetType& get(size_t x, size_t y) const {
+        auto it = buffer_.find(getKey(x, y));
+        if (it != buffer_.end()) {
+            return it->second;
+        }
+        return emptySet_;
+    }
+    std::vector<std::vector<std::reference_wrapper<const std::pair<const int, SetType>>>> getNParts(size_t n) const {
+    std::vector<std::vector<std::reference_wrapper<const std::pair<const int, SetType>>>> parts(n);
         size_t i = 0;
-        for (auto& entry : buffer_) if(!entry.second.empty()){
-            parts[i % n].emplace(entry.first, std::ref(entry.second));
+        for (const auto& entry : buffer_) {
+            parts[i % n].push_back(std::cref(entry));
             ++i;
         }
         return parts;
     }
-
-    const SetType& get(size_t x, size_t y) const {
-    //    std::lock_guard<std::mutex> lock(mutex_);
-        auto it = buffer_.find(std::make_pair(x, y));
-        if (it != buffer_.end()) {
-            return it->second;
-        }
-        return emptySet;
-    }
-
-    size_t getWidth() const {
-        return width_;
-    }
-
-    size_t getHeight() const {
-        return height_;
-    }
-
+    size_t getWidth() const { return width_; }
+    size_t getHeight() const { return height_; }
 private:
     size_t width_;
     size_t height_;
-    mutable std::unordered_map<std::pair<size_t, size_t>, SetType, PairHash> buffer_;
-    mutable SetType emptySet;
-//    mutable std::mutex mutex_;
+    BufferType buffer_;
+    SetType emptySet_;
 };
-

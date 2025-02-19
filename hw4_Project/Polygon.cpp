@@ -464,8 +464,10 @@ int findIntersectionAndFitToScreen(std::pair<std::shared_ptr<Vertex>, std::share
 
 
 
-void PolygonGC::fillGbuffer(GBuffer& gBuffer, const RenderMode& rm) const
+void PolygonGC::fillGbuffer(GBuffer& gBuffer, const RenderMode& rm, long long& ll1, long long& ll2, long long& ll3) const
 {
+
+    auto start = std::chrono::high_resolution_clock::now();
     int width = gBuffer.getWidth(); 
     int hight = gBuffer.getHeight();
     std::vector<std::pair<std::shared_ptr<Vertex>,std::shared_ptr<Vertex>>> lineVector;
@@ -479,20 +481,22 @@ void PolygonGC::fillGbuffer(GBuffer& gBuffer, const RenderMode& rm) const
     (const std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>&a ,
         const std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>& b)
         {return min(a.first->loc().y, a.second->loc().y) < min(b.first->loc().y, b.second->loc().y);});
-
+    auto end = std::chrono::high_resolution_clock::now();
+    ll1+=std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     for (int y = yMin; y < yMax; y++)
     {
+        start = std::chrono::high_resolution_clock::now();
         std::vector<Vector3> vectors;
         Vertex samllestVecX(Vector3(FLT_MAX, FLT_MAX, FLT_MAX));
         Vertex  biggestVecX(Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX));
         for (auto &vetrexPair : lineVector)
         {         
             float t1 = 0;
-            int result=findIntersectionAndFitToScreen(vetrexPair, y,  halfWidth, halfhight, t1);
+            int result = findIntersectionAndFitToScreen(vetrexPair, y,  halfWidth, halfhight, t1);
             if (result ==1)
             {
                 //tempVec.xyRound();
-                Vertex interVertex(*vetrexPair.first, *vetrexPair.second, t1);
+                Vertex interVertex = Vertex(*vetrexPair.first, *vetrexPair.second, t1);
                 samllestVecX = samllestVecX.loc().x < interVertex.loc().x ? samllestVecX : interVertex;
                 biggestVecX = biggestVecX.loc().x > interVertex.loc().x ? biggestVecX : interVertex;
             }
@@ -506,18 +510,23 @@ void PolygonGC::fillGbuffer(GBuffer& gBuffer, const RenderMode& rm) const
         }
         int smallX = max(0,transformToScreenSpace(samllestVecX.loc().x, halfWidth) - 1);
         int bigX = min(width,transformToScreenSpace(biggestVecX.loc().x, halfWidth) + 1);
-
+        end = std::chrono::high_resolution_clock::now();
+        ll2 += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+        start = std::chrono::high_resolution_clock::now();
         for (int x = smallX; x < bigX; x++)
         {
             float t2 = (double)(x - smallX) / (bigX - smallX);
-            Vertex interpolatedVertex(samllestVecX, biggestVecX, t2);
-            Line tmp;
-            if(!rm.getPolygonsUseCNormalFlag())
-                tmp = interpolatedVertex.getDataNormalLine();
-            else
-                tmp = interpolatedVertex.getCalcNormalLine();    
-            gBuffer.push(x, y, GData(interpolatedVertex.loc().z, this, interpolatedVertex.getColor(), tmp.m_a, tmp.direction(), pixType::FROM_POLYGON));
+            Line tmp = Line();
+            if (rm.getRenderShadePhongFlag()) {
+                if (!rm.getPolygonsUseCNormalFlag())
+                    tmp = Vertex::interpolate_dnormal(samllestVecX, biggestVecX, t2);
+                else
+                    tmp = Vertex::interpolate_cnormal(samllestVecX, biggestVecX, t2);
+            }
+            gBuffer.push(x, y, GData(Vertex::interpolate_loc(samllestVecX, biggestVecX, t2).z, this, rm.getRenderShadeGouroudFlag() ? Vertex::interpolate_color(samllestVecX, biggestVecX, t2) : ColorGC(), tmp.m_a, tmp.direction(), pixType::FROM_POLYGON));
         }
+        end = std::chrono::high_resolution_clock::now();
+        ll3 += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     }
 }
 

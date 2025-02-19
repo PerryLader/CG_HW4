@@ -93,7 +93,6 @@ void Renderer::render(const Camera* camera, int width, int height, const std::ve
     // Calculate the elapsed time in milliseconds
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     std::cout << "Invalidation execution time: " << duration.count() << " ms" << std::endl;
-
     Matrix4 aspectRatioMatrix = Matrix4::scaling(Vector3(1.0f / (width / height), 1.0f, 1.0f));
     const Matrix4 projectionAspectMatrix = aspectRatioMatrix * camera->getProjectionMatrix();
     const Matrix4 viewProjectionMatrix = projectionAspectMatrix  * camera->getViewMatrix();
@@ -104,6 +103,7 @@ void Renderer::render(const Camera* camera, int width, int height, const std::ve
     m_shader.setView(cameraPos, projectionAspectMatrix_inv, camera->isPerspective());
     //m_shader.applyTransformationToLights(viewProjectionMatrix);
     for (const auto& model : models) {
+        long long ll1 =0 , ll2= 0, ll3 =0;
         std::vector<Line> lines[LineVectorIndex::LAST];
         std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual> SilhoutteMap;
         Geometry* transformedGeometry;
@@ -131,8 +131,9 @@ void Renderer::render(const Camera* camera, int width, int height, const std::ve
             duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
             std::cout << "Lines execution time: " << duration.count() << " ms" << std::endl;
             start = std::chrono::high_resolution_clock::now();
-            if(!renderMode.getRenderShadeNoneFlag()) transformedGeometry->fillGbuffer(gBuffer , renderMode);
+            if(!renderMode.getRenderShadeNoneFlag()) transformedGeometry->fillGbuffer(gBuffer , renderMode,ll1,ll2,ll3);
             end = std::chrono::high_resolution_clock::now();
+            std::cout << "FillGbuffer break down: " << ll1 << " ns, " << ll2 << " ns, " << ll3 << " ns, " << (ll1/1e6+ll2/1e6+ll3/1e6) << " ms" << std::endl;
             duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
             std::cout << "FillGbuffer execution time: " << duration.count() << " ms" << std::endl;
             if (renderMode.getSilohetteFlag()) this->drawSilhoutteEdges(SilhoutteMap, gBuffer);

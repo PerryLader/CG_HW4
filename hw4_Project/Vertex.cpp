@@ -9,19 +9,34 @@ Vertex::Vertex(Vector3 p, Vector3 n) : m_point(p), m_hasDataNormalLine(true), m_
 {
     m_dataNormalLine = Line(p, (p + (n.normalized() * 0.25)));
 }
+Line Vertex::interpolate_cnormal(const Vertex& a, const Vertex& b, float t) {
+    Vector3 loc = interpolate_loc(a, b, t);
+    return Line(
+        loc, loc + (a.getCalcNormalLine().direction() * (1 - t) + b.getCalcNormalLine().direction() * t).normalized() * NORMAL_LENGTH_MODIFIER);
+}
+Line Vertex::interpolate_dnormal(const Vertex& a, const Vertex& b, float t) {
+    if (!(a.m_hasDataNormalLine && b.m_hasDataNormalLine))
+        interpolate_cnormal(a, b, t);
+    Vector3 loc = interpolate_loc(a, b, t);
+    return Line(
+        loc, loc + (a.getDataNormalLine().direction() * (1 - t) + b.getDataNormalLine().direction() * t).normalized() * NORMAL_LENGTH_MODIFIER);
+}
+Vector3 Vertex::interpolate_loc(const Vertex& a, const Vertex& b, float t) {
+    return  (a.loc() * (1 - t)) + (b.loc() * t);
+}
+ColorGC Vertex::interpolate_color(const Vertex& a, const Vertex& b, float t) {
+    return  (a.getColor() * (1 - t)) + (b.getColor() * t);
+}
 
 Vertex::Vertex(const Vertex &a,const Vertex &b, float t)
 {
-    this->m_point = a.loc() * (1-t) + (b.loc() * (t));
-    this->m_calcNormalLine = Line(
-        this->m_point, this->m_point+ (a.getCalcNormalLine().direction()*(1-t) + b.getCalcNormalLine().direction() * t).normalized()*NORMAL_LENGTH_MODIFIER);
-    this->m_color = (a.getColor() * (1-t)) + (b.getColor() * t);
+    this->m_point = interpolate_loc(a, b, t);
+    this->m_calcNormalLine = interpolate_cnormal(a, b, t);
+    this->m_color = interpolate_color(a, b, t);
     this->m_hasCalcNormalLine = true;
     if (a.m_hasDataNormalLine && b.m_hasDataNormalLine) {
-        this->m_dataNormalLine = Line(
-            this->m_point, this->m_point + (a.getDataNormalLine().direction() * (1 - t) + b.getDataNormalLine().direction() * t).normalized() * NORMAL_LENGTH_MODIFIER);
+        this->m_dataNormalLine = interpolate_dnormal(a, b, t); 
         this->m_hasDataNormalLine = true;
-
     }
     else
         this->m_hasDataNormalLine = false;

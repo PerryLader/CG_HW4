@@ -31,6 +31,10 @@ public:
     Vertex(Vector3 p, Line m_dataNormalLine,bool m_hasDataNormalLine, Line m_calcNormalLine, bool m_hasCalcNormalLine,std::vector<PolygonGC*> m_neigberPolygons);
     Vertex(const Vertex& a, const Vertex& b, float t);
     
+    static Line interpolate_cnormal(const Vertex& a, const Vertex& b, float t);
+    static Line interpolate_dnormal(const Vertex& a, const Vertex& b, float t);
+    static Vector3 interpolate_loc(const Vertex& a, const Vertex& b, float t);
+    static ColorGC interpolate_color(const Vertex& a, const Vertex& b, float t);
 
     //getters and setters
     void setCalcNormalLine();

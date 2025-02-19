@@ -119,7 +119,7 @@ public:
     void loadVertNLinesFromData(std::vector<Line>& container, const ColorGC* overridingColor)const;
     void loadVertNLinesFromCalc(std::vector<Line>& container, const ColorGC* overridingColor) const;
     void loadLines(std::vector<Line> lines[LineVectorIndex::LAST], RenderMode& renderMode, std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual>& SilhoutteMap) const;
-    void fillGbuffer(GBuffer& gBuffer, const RenderMode& rm)const;
+    void fillGbuffer(GBuffer& gBuffer, const RenderMode& rm, long long& ll1, long long& ll2, long long& ll3)const;
     void fillBasicSceneColors(const Shader& shader, const RenderMode& rm);
 
     //printers

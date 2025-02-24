@@ -41,7 +41,34 @@ Vertex::Vertex(const Vertex &a,const Vertex &b, float t)
     else
         this->m_hasDataNormalLine = false;
 }
+void Vertex::setFromInterpolation(const Vertex& a, const Vertex& b, float t, bool location, bool color, bool dataNorm, bool calcNorm) {
+    if(dataNorm)
+       if (a.m_hasDataNormalLine && b.m_hasDataNormalLine) {
+            this->m_dataNormalLine = interpolate_dnormal(a, b, t);
+            this->m_hasDataNormalLine = true;
+       }
+       else {
+           calcNorm = true;
+           this->m_hasDataNormalLine = false;
+       }
+    if (calcNorm) {
+        this->m_calcNormalLine = interpolate_cnormal(a, b, t);
+        this->m_hasCalcNormalLine = true;
+    }
+    else {
+        this->m_hasCalcNormalLine = false;
+    }
+    if (location) {
+        if (dataNorm || calcNorm)
+            this->m_point = this->m_calcNormalLine.m_a;
+        else
+            this->m_point = interpolate_loc(a, b, t);
+    }
+    if (color) {
+        this->m_color = interpolate_color(a, b, t);
+    }
 
+}
 
 //getters and setters
 void Vertex::setCalcNormalLine()

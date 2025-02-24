@@ -45,6 +45,7 @@ public:
     void setLoc(const Vector3& newLoc);
     ColorGC getColor()const;
     void setColor(ColorGC newColor);
+    void setFromInterpolation(const Vertex& a, const Vertex& b, float t, bool location, bool color, bool dataNorm, bool calcNorm);
 
     //utils
     std::shared_ptr<Vertex> getTransformedVertex(const Matrix4& transformation, bool flipNormals)const;
@@ -57,7 +58,19 @@ public:
 
     static std::shared_ptr<Vertex> intersectionVertexesWithPlan(const std::shared_ptr<Vertex>& a, const std::shared_ptr<Vertex>& b, Vector3& planPos);
     
+    static Vector3 calculate_delta_direction(const Vertex& a, const Vertex& b, int steps, bool dynamic) {
+        if (dynamic) {
+            if (a.hasDataNormalLine() && b.hasDataNormalLine()) {
+                return ((b.getDataNormalLine().direction() - a.getDataNormalLine().direction()) / steps);
+            }
+        }
+        return ((b.getCalcNormalLine().direction() - a.getCalcNormalLine().direction()) / steps);
+    }
+    static ColorGC calculate_delta_color(const Vertex& a, const Vertex& b, int steps) {
+        return ((b.getColor() - a.getColor()) / steps);
+    }
+    static Vector3 calculate_delta_location(const Vertex& a, const Vertex& b, int steps) {
+        return ((b.loc() - a.loc()) / steps);
+    }
 };
-
-
 #endif // VERTEX_H

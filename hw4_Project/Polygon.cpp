@@ -1,5 +1,6 @@
 #include "Polygon.h"
 #include <afxwin.h>
+#include <unordered_set>
 
 void BBox::toPrint() const{
     std::cout << "Boudning Box: " << m_minBounds <<", " << m_maxBounds << std::endl;
@@ -462,68 +463,130 @@ int findIntersectionAndFitToScreen(std::pair<std::shared_ptr<Vertex>, std::share
     return 1;
 }
 
+// Function to sort edges by their y-coordinates
+bool compareEdgesByY(const std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>& a, const std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>& b) {
+    return min(a.first->loc().y, a.second->loc().y) < min(b.first->loc().y, b.second->loc().y);
+}
+int convertClipToScreen(float clipCoord, float halfSize) {
+    return (int)round((clipCoord * halfSize) + halfSize);
+}
+
+void updateActiveEdges(int y, float halfhight, std::vector<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>>& lineVector, std::vector<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>>::iterator& currentLine, std::unordered_set<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>*>& activeEdges) {
+    while (currentLine != lineVector.end() && min(convertClipToScreen(currentLine->first->loc().y, halfhight), convertClipToScreen(currentLine->second->loc().y, halfhight)) == y) {
+        activeEdges.insert(&(*currentLine));
+        ++currentLine;
+    }
+    for (auto it = activeEdges.begin(); it != activeEdges.end();) {
+        if (max(convertClipToScreen((*it)->first->loc().y, halfhight), convertClipToScreen((*it)->second->loc().y, halfhight)) < y) {
+            it = activeEdges.erase(it);
+        }
+        else {
+            ++it;
+        }
+    }
+}
+void updateLineVertexes(std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>* edge, int y, float halfWidth, float halfhight, Vertex& smallestVecX, Vertex& biggestVecX, std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>*& smallestEdge, std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>*& biggestEdge, float& t_xmin ,float& t_xmax) {
+    float t1 = 0;
+    int result = findIntersectionAndFitToScreen(*edge, y, halfWidth, halfhight, t1);
+    if (result == 1) {
+        Vector3 interVertex = Vertex::interpolate_loc(*edge->first, *edge->second, t1);
+        if (interVertex.x < smallestVecX.loc().x) {
+            smallestVecX.setLoc(interVertex);
+            smallestEdge = edge;
+            t_xmin = t1;
+        }
+        if (interVertex.x > biggestVecX.loc().x) {
+            biggestVecX.setLoc(interVertex);
+            biggestEdge = edge;
+            t_xmax = t1;
+        }
+    }
+    else if (result == 2) {
+        if (edge->first->loc().x < smallestVecX.loc().x) {
+            smallestVecX = *edge->first;
+            smallestEdge = edge;
+            t_xmin = 0;
+        }
+        if (edge->first->loc().x > biggestVecX.loc().x) {
+            biggestVecX = *edge->first;
+            biggestEdge = edge;
+            t_xmax = 1;
+        }
+        if (edge->second->loc().x < smallestVecX.loc().x) {
+            smallestVecX = *edge->second;
+            smallestEdge = edge;
+            t_xmin = 1;
+        }
+        if (edge->second->loc().x > biggestVecX.loc().x) {
+            biggestVecX = *edge->second;
+            biggestEdge = edge;
+            t_xmin = 0;
+        }
+    }
+}
 
 
 void PolygonGC::fillGbuffer(GBuffer& gBuffer, const RenderMode& rm, long long& ll1, long long& ll2, long long& ll3) const
 {
-
     auto start = std::chrono::high_resolution_clock::now();
-    int width = gBuffer.getWidth(); 
-    int hight = gBuffer.getHeight();
-    std::vector<std::pair<std::shared_ptr<Vertex>,std::shared_ptr<Vertex>>> lineVector;
-    this->loadVertexEdgesToContainer(lineVector, nullptr);
-    int halfWidth = width / 2;
-    int halfhight = hight / 2;
-    int yMax = min((int)(((m_bbox.getMax().y * halfhight) + halfhight) ) + 1, hight);
-    int yMin = max(((m_bbox.getMin().y * halfhight) + halfhight) - 1 ,0);
+    const int width = gBuffer.getWidth(); 
+    const int hight = gBuffer.getHeight();
+    const int halfWidth = width / 2;
+    const int halfhight = hight / 2;
+    const int yMax = convertClipToScreen(m_bbox.getMax().y , halfhight);
+    const int yMin = convertClipToScreen(m_bbox.getMin().y, halfhight);
+    std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>* xMaxEdge = nullptr;
+    std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>* xMinEdge = nullptr;
 
-    std::sort(lineVector.begin(), lineVector.end(), []
-    (const std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>&a ,
-        const std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>& b)
-        {return min(a.first->loc().y, a.second->loc().y) < min(b.first->loc().y, b.second->loc().y);});
+    std::vector<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>> lineVector;
+    this->loadVertexEdgesToContainer(lineVector, nullptr);
+    std::sort(lineVector.begin(), lineVector.end(), compareEdgesByY);
+
+    std::unordered_set<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>*> activeEdges;
+    auto currentLine = lineVector.begin();
+    // Iterate over y-ranges
     auto end = std::chrono::high_resolution_clock::now();
-    ll1+=std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-    for (int y = yMin; y < yMax; y++)
-    {
+    ll1 += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    for (int y = yMin; y < yMax; ++y) {
+        // Update active edges
         start = std::chrono::high_resolution_clock::now();
-        std::vector<Vector3> vectors;
-        Vertex samllestVecX(Vector3(FLT_MAX, FLT_MAX, FLT_MAX));
-        Vertex  biggestVecX(Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX));
-        for (auto &vetrexPair : lineVector)
-        {         
-            float t1 = 0;
-            int result = findIntersectionAndFitToScreen(vetrexPair, y,  halfWidth, halfhight, t1);
-            if (result ==1)
-            {
-                //tempVec.xyRound();
-                Vertex interVertex = Vertex(*vetrexPair.first, *vetrexPair.second, t1);
-                samllestVecX = samllestVecX.loc().x < interVertex.loc().x ? samllestVecX : interVertex;
-                biggestVecX = biggestVecX.loc().x > interVertex.loc().x ? biggestVecX : interVertex;
-            }
-            else if (result == 2)
-            {
-                samllestVecX = samllestVecX.loc().x < vetrexPair.first->loc().x ? samllestVecX : *vetrexPair.first;
-                biggestVecX = biggestVecX.loc().x > vetrexPair.first->loc().x ? biggestVecX : *vetrexPair.first;
-                samllestVecX = samllestVecX.loc().x < vetrexPair.second->loc().x ? samllestVecX : *vetrexPair.second;
-                biggestVecX = biggestVecX.loc().x > vetrexPair.second->loc().x ? biggestVecX : *vetrexPair.second;
-            }            
-        }
-        int smallX = max(0,transformToScreenSpace(samllestVecX.loc().x, halfWidth) - 1);
-        int bigX = min(width,transformToScreenSpace(biggestVecX.loc().x, halfWidth) + 1);
+        updateActiveEdges(y, halfhight, lineVector, currentLine, activeEdges);
+        // Process active edges
+        Vertex smallestVecX(Vector3(FLT_MAX, FLT_MAX, FLT_MAX));
+        Vertex biggestVecX(Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX));
+        float t_xmin = 0,t_xmax = 0; 
+        for (const auto& edge : activeEdges)
+            updateLineVertexes(edge,y,halfWidth,halfhight,smallestVecX, biggestVecX, xMinEdge, xMaxEdge , t_xmin, t_xmax);
+        if (smallestVecX.loc() == Vector3(FLT_MAX, FLT_MAX, FLT_MAX) || biggestVecX.loc() == Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX))
+            continue;
+        int smallX = convertClipToScreen(smallestVecX.loc().x, halfWidth);// max(0, transformToScreenSpace(smallestVecX.loc().x, halfWidth) - 1);
+        int bigX = convertClipToScreen(biggestVecX.loc().x, halfWidth); // min(width, transformToScreenSpace(biggestVecX.loc().x, halfWidth) + 1);
+        smallestVecX.setFromInterpolation(*xMinEdge->first, *xMinEdge->second, t_xmin , false, rm.getRenderShadeGouroudFlag(), rm.getRenderShadePhongFlag() && rm.getPolygonsUseCNormalFlag(), rm.getRenderShadePhongFlag() && rm.getRenderDynemic());
+        biggestVecX.setFromInterpolation(*xMaxEdge->first, *xMaxEdge->second, t_xmax, false, rm.getRenderShadeGouroudFlag(), rm.getRenderShadePhongFlag() && rm.getPolygonsUseCNormalFlag(), rm.getRenderShadePhongFlag() && rm.getRenderDynemic());
         end = std::chrono::high_resolution_clock::now();
         ll2 += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
         start = std::chrono::high_resolution_clock::now();
+        ColorGC colorStep = Vertex::calculate_delta_color(smallestVecX, biggestVecX, bigX - smallX);
+        Vector3 locStep = Vertex::calculate_delta_location(smallestVecX, biggestVecX, bigX - smallX);
+        //Vector3 normDirStep = Vertex::calculate_delta_direction(smallestVecX, biggestVecX, bigX - smallX, rm.getRenderDynemic());
         for (int x = smallX; x < bigX; x++)
         {
+            /*
             float t2 = (double)(x - smallX) / (bigX - smallX);
             Line tmp = Line();
             if (rm.getRenderShadePhongFlag()) {
                 if (!rm.getPolygonsUseCNormalFlag())
-                    tmp = Vertex::interpolate_dnormal(samllestVecX, biggestVecX, t2);
+                    tmp = Vertex::interpolate_dnormal(smallestVecX, biggestVecX, t2);
                 else
-                    tmp = Vertex::interpolate_cnormal(samllestVecX, biggestVecX, t2);
+                    tmp = Vertex::interpolate_cnormal(smallestVecX, biggestVecX, t2);
             }
-            gBuffer.push(x, y, GData(Vertex::interpolate_loc(samllestVecX, biggestVecX, t2).z, this, rm.getRenderShadeGouroudFlag() ? Vertex::interpolate_color(samllestVecX, biggestVecX, t2) : ColorGC(), tmp.m_a, tmp.direction(), pixType::FROM_POLYGON));
+            gBuffer.push(x, y, GData(Vertex::interpolate_loc(smallestVecX, biggestVecX, t2).z, this, rm.getRenderShadeGouroudFlag() ? Vertex::interpolate_color(smallestVecX, biggestVecX, t2) : ColorGC(), tmp.m_a, tmp.direction(), pixType::FROM_POLYGON));
+            */
+            int step = x - smallX;
+            Vector3 loc = smallestVecX.loc() + locStep * step;
+            ColorGC color = smallestVecX.getColor() + colorStep * step;
+            //Vector3 normDir = smallestVecX.getColor() + colorStep * step;
+            gBuffer.push(x, y, GData(loc.z, this, color, loc, Vector3(), pixType::FROM_POLYGON));
         }
         end = std::chrono::high_resolution_clock::now();
         ll3 += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();

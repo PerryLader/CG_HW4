@@ -35,10 +35,6 @@ struct GData {
     bool operator<(const GData& other) const {
         return (std::abs(z_indx - other.z_indx) > GData::epsilon) && z_indx < other.z_indx;
     }
-
-    bool shouldReplace(const GData& other) const {
-        return std::abs(z_indx - other.z_indx) <= GData::epsilon && z_indx < other.z_indx;
-    }
 };
 
 class GBuffer {
@@ -61,14 +57,8 @@ public:
     }
 
     void push(size_t x, size_t y, const GData& data) {
-        if (x < width_ && y < height_) {
-            auto& set = buffer_[getKey(x, y)];
-            auto it = set.find(data);
-            if (it != set.end() && data.shouldReplace(*it)) {
-                set.erase(it);
-            }
-            set.insert(data);
-        }
+        if (x < width_ && y < height_) 
+            buffer_[getKey(x, y)].insert(data);
     }
 
     SetType& get(size_t x, size_t y) {

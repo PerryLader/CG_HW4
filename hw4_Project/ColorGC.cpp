@@ -126,6 +126,19 @@ ColorGC ColorGC::operator*(const float scalar) const
         clamp(blue),
         this->getAlpha());
 }
+ColorGC ColorGC::operator/(const float scalar) const
+{
+    uint32_t red = this->getRed() / scalar;
+    uint32_t green = this->getGreen() / scalar;
+    uint32_t blue = this->getBlue() / scalar;
+    //uint32_t alpha = this->getAlpha() * scalar;
+
+
+    return ColorGC(clamp(red),
+        clamp(green),
+        clamp(blue),
+        this->getAlpha());
+}
 
 ColorGC ColorGC::operator*(const ColorGC& other) const
 {

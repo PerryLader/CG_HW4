@@ -49,6 +49,7 @@ public:
     ColorGC operator+(const ColorGC& other) const;
     ColorGC operator-(const ColorGC& other) const;
     ColorGC operator*(const float scalar) const;
+    ColorGC operator/(const float scalar) const;
     ColorGC operator*(const ColorGC& other) const;
 
 };

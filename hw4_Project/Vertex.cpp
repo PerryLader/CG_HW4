@@ -9,6 +9,12 @@ Vertex::Vertex(Vector3 p, Vector3 n) : m_point(p), m_hasDataNormalLine(true), m_
 {
     m_dataNormalLine = Line(p, (p + (n.normalized() * 0.25)));
 }
+Vertex::Vertex(Vector3 p, ColorGC c) : m_point(p), m_dataNormalLine(), m_hasDataNormalLine(false), m_hasCalcNormalLine(false), m_color(c) {}
+Vertex::Vertex(Vector3 p, Vector3 n, ColorGC c) : m_point(p), m_hasDataNormalLine(true), m_hasCalcNormalLine(false), m_color(c)
+{
+    m_dataNormalLine = Line(p, (p + (n.normalized() * 0.25)),c);
+}
+
 Line Vertex::interpolate_cnormal(const Vertex& a, const Vertex& b, float t) {
     Vector3 loc = interpolate_loc(a, b, t);
     return Line(
@@ -74,12 +80,12 @@ void Vertex::setFromInterpolation(const Vertex& a, const Vertex& b, float t, boo
 void Vertex::setCalcNormalLine()
 {
     Vector3 avrageNormal(0, 0, 0);
-    for (PolygonGC* t : m_neigberPolygons)
+    for (const std::weak_ptr<PolygonGC>& weak_poly : m_neigberPolygons) if (auto poly = weak_poly.lock())
     {
-        avrageNormal = avrageNormal + t->getCalcNormalNormolized();
+        avrageNormal = avrageNormal + poly->getCalcNormalNormolized();
     }
     this->m_calcNormalLine = Line(m_point,
-        m_point + ((avrageNormal * (1.0 / m_neigberPolygons.size())).normalized() * NORMAL_LENGTH_MODIFIER));
+        m_point + ((avrageNormal * (1.0 / m_neigberPolygons.size())).normalized() * NORMAL_LENGTH_MODIFIER) , m_color);
     m_hasCalcNormalLine = true;
     //color here???
 }
@@ -114,7 +120,7 @@ Line Vertex::getDataNormalLine()const
 }
 std::shared_ptr<Vertex> Vertex::getTransformedVertex(const Matrix4& transformation, bool flipNormals) const
 {
-    std::shared_ptr<Vertex> temp(new Vertex((transformation * Vector4::extendOne(this->m_point)).toVector3()));
+    std::shared_ptr<Vertex> temp = std::make_shared<Vertex>((transformation * Vector4::extendOne(this->m_point)).toVector3());
     if (m_hasCalcNormalLine)
     {
         temp->m_hasCalcNormalLine = true;
@@ -178,7 +184,7 @@ void Vertex::print() {
     std::cout << "Vertex Located at: " << m_point << std::endl;
 }
 
-void Vertex::addNeigberPolygon(PolygonGC* poly) { m_neigberPolygons.push_back(poly); }
+void Vertex::addNeigberPolygon(std::shared_ptr<PolygonGC> poly) { m_neigberPolygons.push_back(poly); }
 
 
 std::vector<Vector3> Vertex::intersectionVertex(const std::shared_ptr<Vertex>& a, const std::shared_ptr<Vertex>& b)
@@ -247,6 +253,6 @@ std::shared_ptr<Vertex> Vertex::intersectionVertexesWithPlan(const std::shared_p
         std::cout << "maybe probelem here3";
         throw;
     }  
-    return std::shared_ptr<Vertex>(new Vertex(*a, * b,t));
+    return std::make_shared<Vertex>(*a, * b,t);
 
 }

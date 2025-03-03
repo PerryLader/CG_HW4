@@ -3,7 +3,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-
+#include "Vector4.h"
 
 class ColorGC {
 private:
@@ -47,10 +47,10 @@ public:
     static ColorGC alphaColorInterpolating(const ColorGC& closer, const ColorGC& farther);
     //oprators
     ColorGC operator+(const ColorGC& other) const;
-    ColorGC operator-(const ColorGC& other) const;
+    Vector4 operator-(const ColorGC& other) const;
     ColorGC operator*(const float scalar) const;
     ColorGC operator/(const float scalar) const;
     ColorGC operator*(const ColorGC& other) const;
-
+    ColorGC operator+(const Vector4& other) const;
 };
 

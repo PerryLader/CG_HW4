@@ -212,6 +212,8 @@
     <ClCompile Include="MaterialDlg.cpp" />
     <ClCompile Include="Matrix4.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="Modules.cpp" />
+    <ClCompile Include="MovieMaker.cpp" />
     <ClCompile Include="NoShadeShader.cpp" />
     <ClCompile Include="ObjTranspDialog.cpp" />
     <ClCompile Include="PngWrapper.cpp" />
@@ -219,7 +221,6 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="StaticModel.cpp" />
     <ClCompile Include="StdAfx.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -250,6 +251,7 @@
     <ClInclude Include="GBuffer.h" />
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="Modules.h" />
+    <ClInclude Include="MovieMaker.h" />
     <ClInclude Include="ObjTranspDialog.h" />
     <ClInclude Include="ScreenCommand.h" />
     <ClInclude Include="iritSkel.h" />
@@ -267,7 +269,7 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Shader.h" />
-    <ClInclude Include="StaticModel.h" />
+    <ClInclude Include="StrongModel.h" />
     <ClInclude Include="StdAfx.h" />
     <ClInclude Include="..\include\allocate.h" />
     <ClInclude Include="..\include\attribut.h" />

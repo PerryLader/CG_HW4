@@ -126,7 +126,7 @@ void Line::draw(GBuffer& gBuffer,int width,int hight)const
     int x2 = (m_b.x * halfWidth) + halfWidth;
     int y1 = (m_a.y*halfhight)+halfhight;
     int y2 = (m_b.y * halfhight) + halfhight;
-
+    gBuffer.allocateBBox(std::min(x1,x2), std::min(y1, y2), std::max(x1, x2), std::max(y1, y2));
 
     int dx = abs(x2 - x1), dy = abs(y2 - y1);
     int sx = (x1 < x2) ? 1 : -1; // Step for x
@@ -140,7 +140,7 @@ void Line::draw(GBuffer& gBuffer,int width,int hight)const
         {
             float t = (x1 - (m_a.x * halfWidth) + halfWidth) / ((m_b.x * halfWidth) + halfWidth - (m_a.x * halfWidth) + halfWidth);
             float interpolatedZ = (m_a.z * (1 - t)) + t * m_b.z;            
-            gBuffer.push(x1,y1,GData(interpolatedZ,nullptr,color,Vector3(-5,-5,3333),0,pixType::FROM_LINE));
+            gBuffer.push(x1,y1,GData(nullptr,color,Vector3(-5,-5, interpolatedZ),0));
         }
         
         // Break when we reach the end point
@@ -189,25 +189,25 @@ void Line::drawSilhoutte(GBuffer& gBuffer, int width, int hight) const
             
                 if (x1 != 1 && x1 != 0)
                 {
-                    gBuffer.push(x1-1, y1 ,GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
-                    gBuffer.push(x1-2, y1, GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
+                    gBuffer.push(x1-1, y1 ,GData(nullptr, color, Vector3(-5, -5, interpolatedZ), 0));
+                    gBuffer.push(x1-2, y1, GData(nullptr, color, Vector3(-5, -5, interpolatedZ), 0));
                 }
                 if (x1 != width - 2 && x1 != width - 1)
                 {
-                    gBuffer.push(x1 + 1, y1, GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
-                    gBuffer.push(x1 + 2, y1, GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
+                    gBuffer.push(x1 + 1, y1, GData(nullptr, color, Vector3(-5, -5, interpolatedZ), 0));
+                    gBuffer.push(x1 + 2, y1, GData(nullptr, color, Vector3(-5, -5, interpolatedZ), 0));
                 }
                 if (y1 != 1 && y1 != 0)
                 {
-                    gBuffer.push(x1, y1-1, GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
-                    gBuffer.push(x1, y1-2, GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
+                    gBuffer.push(x1, y1-1, GData(nullptr, color, Vector3(-5, -5, interpolatedZ), 0));
+                    gBuffer.push(x1, y1-2, GData(nullptr, color, Vector3(-5, -5, interpolatedZ), 0));
                 }
                 if (y1 != hight - 2 && y1 != hight - 1)
                 {
-                    gBuffer.push(x1, y1+1, GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
-                    gBuffer.push(x1, y1+1,GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
+                    gBuffer.push(x1, y1+1, GData(nullptr, color, Vector3(-5, -5, interpolatedZ), 0));
+                    gBuffer.push(x1, y1+1,GData(nullptr, color, Vector3(-5, -5, interpolatedZ), 0));
                 }
-                gBuffer.push(x1, y1, GData(interpolatedZ, nullptr, color, Vector3(-5, -5, 3333), 0, pixType::FROM_LINE));
+                gBuffer.push(x1, y1, GData(nullptr, color, Vector3(-5, -5, interpolatedZ), 0));
         }
 
         // Break when we reach the end point
@@ -236,8 +236,4 @@ void Line::print() {
         " -> (" << m_b << ")" << "]";
 
 }
-//
-//bool Line::isInClip()
-//{
-//    return m_a.isInsideClipVolume()&&m_b.isInsideClipVolume();
-//}
+

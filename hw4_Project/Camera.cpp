@@ -38,3 +38,7 @@ void Camera::translate(const Matrix4& tMat) {
     this->m_viewMatrix = tMat * this->m_viewMatrix;
 }
 
+void Camera::right_side_translate(const Matrix4& tMat) {
+    this->m_viewMatrix = this->m_viewMatrix * tMat;
+}
+

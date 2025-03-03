@@ -21,19 +21,17 @@ class PolygonGC;
 class ColorGC;
 
 struct GData {
-    float z_indx;
     const PolygonGC* polygon;
     ColorGC pixColor;
     Vector3 pixPos;
     Vector3 pixNorm;
-    pixType m_pixType;
-    static constexpr double epsilon = 5e-2;
+    static constexpr double epsilon = 5e-4;
 
-    GData(float z, const PolygonGC* p, ColorGC c, Vector3 pos, Vector3 norm, pixType type)
-        : z_indx(z), polygon(p), pixColor(c), pixPos(pos), pixNorm(norm), m_pixType(type) {}
+    GData(const PolygonGC* p, ColorGC c, Vector3 pos, Vector3 norm)
+        : polygon(p), pixColor(c), pixPos(pos), pixNorm(norm){}
 
     bool operator<(const GData& other) const {
-        return (std::abs(z_indx - other.z_indx) > GData::epsilon) && z_indx < other.z_indx;
+        return (std::abs(pixPos.z - other.pixPos.z) > GData::epsilon) && pixPos.z < other.pixPos.z;
     }
 };
 
@@ -57,7 +55,7 @@ public:
     }
 
     void push(size_t x, size_t y, const GData& data) {
-        if (x < width_ && y < height_) 
+        if (x < width_ && y < height_)
             buffer_[getKey(x, y)].insert(data);
     }
 
@@ -77,7 +75,7 @@ public:
         return emptySet_;
     }
     std::vector<std::vector<std::reference_wrapper<const std::pair<const int, SetType>>>> getNParts(size_t n) const {
-    std::vector<std::vector<std::reference_wrapper<const std::pair<const int, SetType>>>> parts(n);
+        std::vector<std::vector<std::reference_wrapper<const std::pair<const int, SetType>>>> parts(n);
         size_t i = 0;
         for (const auto& entry : buffer_) {
             parts[i % n].push_back(std::cref(entry));

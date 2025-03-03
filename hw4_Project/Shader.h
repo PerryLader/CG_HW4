@@ -9,6 +9,9 @@ class Shader
 {
 private:
     ColorGC m_fogColor;
+    float m_fogIntensity;
+    bool m_fogEnabled;
+
     float m_specularityExp;
     LightParams m_lightSources[LightID::MAX_LIGHT];
     Vector3 m_light_pos[LightID::MAX_LIGHT];
@@ -16,7 +19,7 @@ private:
     Vector3 m_viewPos;
     bool m_isperspective;
     Matrix4 m_mat_inv;
-    static void Shader::perThreadApllyShading(uint32_t* dest, GBuffer& gBuff, std::vector<std::reference_wrapper<const std::pair<const int, GBuffer::SetType>>>& gLists, const RenderMode& rd, const Shader* shader);
+    static void perThreadApllyShading(uint32_t* dest, GBuffer& gBuff, std::vector<std::reference_wrapper<const std::pair<const int, GBuffer::SetType>>>& gLists, const RenderMode& rd, const Shader* shader);
 
 	//virtual void scanConvertion() = 0;
 public:
@@ -24,7 +27,7 @@ public:
     ColorGC calcLightColorAtPos(Vector3 pos, Vector3 normal, ColorGC colorBeforeLight) const;
     void applyShading(uint32_t* dest, GBuffer& gBuff, const RenderMode& rd) const;
     Shader();
-    void setFogColor(const ColorGC& color);
+    void setFog(const ColorGC& color, float intensity, bool enabled);
     ColorGC getFogColor()const;
     void updateLighting(LightParams lights[MAX_LIGHT], LightParams ambient, int sceneSpecExp);
 
@@ -34,20 +37,5 @@ public:
         m_mat_inv = mat_inv;
         m_isperspective = isPerspective;
     }
-
-    void applyTransformationToLights(const Matrix4& tMat) {
-        for (int id = LIGHT_ID_1; id < MAX_LIGHT; id++) if (m_lightSources[id].type == LIGHT_TYPE_POINT)
-            m_light_pos[id] = (tMat * Vector4::extendOne(m_lightSources[id].getPos())).toVector3();
-    }
 };
-
-//class NoShadeShader :
-//    public Shader
-//{
-//private:
-//    
-//public:
-//
-//    
-//};
 

@@ -4,9 +4,9 @@ Geometry::Geometry(const std::string& name, const ColorGC& color) : m_name(name)
 
 // Destructor
 Geometry::~Geometry() {
-	for (PolygonGC* polygon : m_polygons) {
-		delete polygon;
-	}
+	//for (PolygonGC* polygon : m_polygons) {
+	//	delete polygon;
+	//}
 	m_polygons.clear();
 }
 
@@ -37,7 +37,7 @@ std::string Geometry::getName() const{
 	return this->m_name;
 }
 
-void Geometry::addPolygon(PolygonGC* poli)
+void Geometry::addPolygon(std::shared_ptr<PolygonGC> poli)
 {
 	this->m_polygons.push_back(poli);
 	if (!poli->hasDataNormalLine())
@@ -47,9 +47,9 @@ void Geometry::addPolygon(PolygonGC* poli)
 	m_bBox.updateBBox(poli->getBbox());
 }
 
-Geometry* Geometry::applyTransformation(const Matrix4& tMat, bool flipNormals) const{
+std::unique_ptr<Geometry> Geometry::applyTransformation(const Matrix4& tMat, bool flipNormals) const{
 	
-	Geometry* res = new Geometry(m_name,this->m_objColor);
+	std::unique_ptr<Geometry> res = std::make_unique<Geometry>(m_name,this->m_objColor);
 	for (const auto& poly : m_polygons) {
 		if (!poly->isClippedByBBox(tMat)) {
 			res->addPolygon(poly->applyTransformation(tMat, flipNormals));
@@ -59,9 +59,10 @@ Geometry* Geometry::applyTransformation(const Matrix4& tMat, bool flipNormals) c
 }
 void Geometry::calcVertxNormal()
 {
-	for (std::pair<Vector3, std::shared_ptr<Vertex>> t : m_map)
+	for (auto& t : m_map)
 	{
-		t.second->setCalcNormalLine();
+		if(auto vert = t.second.lock())
+			vert->setCalcNormalLine();
 	}
 }
 
@@ -133,18 +134,18 @@ void validateRenderModeToPolyData(bool hasPolyDataNormal, bool hasVertDataNormal
 	}
 }
 
-void Geometry::fillGbuffer(GBuffer& gBuffer, RenderMode& rm, long long& ll1, long long& ll2, long long& ll3) const
+void Geometry::fillGbuffer(GBuffer& gBuffer, RenderMode& rm) const
 {
 	validateRenderModeToPolyData(hasPolyDataNormal, hasVertDataNormal, rm);
 	int height = gBuffer.getHeight();
 	int width = gBuffer.getWidth();
-	int yMax = std::min((int)(((getBBox().getMax().y * height /2) + height / 2)) + 1, height);
-	int yMin = std::max((int)((getBBox().getMin().y * height / 2) + height / 2) - 1, 0);
-	int xMax = std::min((int)(((getBBox().getMax().x * width / 2) + width / 2)) + 1, width);
-	int xMin = std::max((int)((getBBox().getMin().x * width / 2) + width / 2) - 1, 0);
+	int yMax = convertClipToScreen(getBBox().getMax().y, height / 2);
+	int yMin = convertClipToScreen(getBBox().getMin().y, height / 2);
+	int xMax = convertClipToScreen(getBBox().getMax().x, width / 2);
+	int xMin = convertClipToScreen(getBBox().getMin().x, width / 2);
 	gBuffer.allocateBBox(xMin,yMin,xMax,yMax);
 	for (const auto& poly : m_polygons) if (!rm.getRenderCulledFlag() || rm.getRenderCulledFlag() && poly->isVisible()) {
-		poly->fillGbuffer(gBuffer, rm, ll1, ll2, ll3);
+		poly->fillGbuffer(gBuffer, rm);
 	}
 }
 
@@ -185,17 +186,19 @@ void Geometry::loadLines(std::vector<Line> lines[LineVectorIndex::LAST],
 }
 
 void Geometry::clip() {
-	for (PolygonGC* temp : m_polygons)
+	for (auto& temp : m_polygons)
 		temp->clip();
 	this->resetBounds();
 }
+
 bool Geometry::isClippedByBBox(const Matrix4& tMat) const {
 	return !BBox::bboxCollide(getBBox().transformBBox(tMat), BBox::unitBBox());
 }
 void Geometry::print() const
 {
+
 	int i = 0;
-	for (const PolygonGC* temp : m_polygons)
+	for (const auto& temp : m_polygons)
 	{
 		std::cout << "		Polygon[" << i << "] vertices:" << std::endl;
 		temp->printVertices();

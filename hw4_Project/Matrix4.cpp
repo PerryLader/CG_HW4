@@ -315,7 +315,7 @@ Matrix4 Matrix4::rotation(float angle, int axis) {
 }
 // Rotation matrices
 Matrix4 Matrix4::rotationX(float angle) {
-    Matrix4 result;
+    Matrix4 result = Matrix4::identity();
     float c = std::cos(angle);
     float s = std::sin(angle);
     result.m[1][1] = c;
@@ -326,7 +326,7 @@ Matrix4 Matrix4::rotationX(float angle) {
 }
 
 Matrix4 Matrix4::rotationY(float angle) {
-    Matrix4 result;
+    Matrix4 result = Matrix4::identity();
     float c = std::cos(angle);
     float s = std::sin(angle);
     result.m[0][0] = c;
@@ -337,7 +337,7 @@ Matrix4 Matrix4::rotationY(float angle) {
 }
 
 Matrix4 Matrix4::rotationZ(float angle) {
-    Matrix4 result;
+    Matrix4 result = Matrix4::identity();
     float c = std::cos(angle);
     float s = std::sin(angle);
     result.m[0][0] = c;
@@ -514,4 +514,28 @@ Matrix4 Matrix4::irit_inverse() const{
         }
     }
     return result;
+}
+
+
+void Matrix4::renormalize() {
+    // Normalize the first row (or column if stored in column-major order)
+    Vector3 right(m[0][0], m[0][1], m[0][2]);
+    right.normalized();
+    m[0][0] = right.x;
+    m[0][1] = right.y;
+    m[0][2] = right.z;
+
+    // Normalize the second row (or column if stored in column-major order)
+    Vector3 up(m[1][0], m[1][1], m[1][2]);
+    up.normalized();
+    m[1][0] = up.x;
+    m[1][1] = up.y;
+    m[1][2] = up.z;
+
+    // Recompute the third row (or column) to ensure orthogonality
+    Vector3 forward = Vector3::cross(right, up);
+    forward.normalized();
+    m[2][0] = forward.x;
+    m[2][1] = forward.y;
+    m[2][2] = forward.z;
 }

@@ -54,6 +54,8 @@ public:
     // Inverse using LU Decomposition
     Matrix4 inverse() const;
 
+    void renormalize();
+
     // Rotation matrices
     static Matrix4 rotation(float angle, int axis);
 

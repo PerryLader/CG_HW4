@@ -29,7 +29,9 @@ public:
         setProjection();
     }
 
-    void Camera::translate(const Matrix4& tMat);
+    void translate(const Matrix4& tMat);
+
+    void right_side_translate(const Matrix4& tMat);
 
     // Function to set orthogonal projection
 

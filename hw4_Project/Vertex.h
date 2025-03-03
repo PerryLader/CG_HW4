@@ -9,7 +9,6 @@
 
 class PolygonGC;
 
-
 class Vertex {
 private:
     Vector3 m_point;
@@ -17,7 +16,7 @@ private:
     bool m_hasDataNormalLine;  
     Line m_calcNormalLine;
     bool m_hasCalcNormalLine;
-    std::vector<PolygonGC*> m_neigberPolygons;
+    std::vector<std::weak_ptr<PolygonGC>> m_neigberPolygons;
     ColorGC m_color;
 
     void setDataNormalLine(Line normal);
@@ -28,9 +27,12 @@ public:
     // Constructors
     Vertex(Vector3 p);
     Vertex(Vector3 p, Vector3 n);
-    Vertex(Vector3 p, Line m_dataNormalLine,bool m_hasDataNormalLine, Line m_calcNormalLine, bool m_hasCalcNormalLine,std::vector<PolygonGC*> m_neigberPolygons);
+    Vertex(Vector3 p, ColorGC c);
+    Vertex(Vector3 p, Vector3 n, ColorGC c);
+    Vertex(Vector3 p, Line m_dataNormalLine,bool m_hasDataNormalLine, Line m_calcNormalLine, bool m_hasCalcNormalLine, std::vector<std::weak_ptr<PolygonGC>> m_neigberPolygons);
     Vertex(const Vertex& a, const Vertex& b, float t);
-    
+    ~Vertex() = default;
+
     static Line interpolate_cnormal(const Vertex& a, const Vertex& b, float t);
     static Line interpolate_dnormal(const Vertex& a, const Vertex& b, float t);
     static Vector3 interpolate_loc(const Vertex& a, const Vertex& b, float t);
@@ -51,7 +53,9 @@ public:
     std::shared_ptr<Vertex> getTransformedVertex(const Matrix4& transformation, bool flipNormals)const;
     void transformVertex(const Matrix4& transformation);
     bool isInsideClipVolume();
-    void addNeigberPolygon(PolygonGC* poly);
+
+    void addNeigberPolygon(std::shared_ptr<PolygonGC> poly);
+
     void print();
     //statics
     static std::vector<Vector3> intersectionVertex(const std::shared_ptr<Vertex> &a, const std::shared_ptr<Vertex>& b);
@@ -66,7 +70,7 @@ public:
         }
         return ((b.getCalcNormalLine().direction() - a.getCalcNormalLine().direction()) / steps);
     }
-    static ColorGC calculate_delta_color(const Vertex& a, const Vertex& b, int steps) {
+    static Vector4 calculate_delta_color(const Vertex& a, const Vertex& b, int steps) {
         return ((b.getColor() - a.getColor()) / steps);
     }
     static Vector3 calculate_delta_location(const Vertex& a, const Vertex& b, int steps) {

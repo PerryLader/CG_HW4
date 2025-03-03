@@ -82,9 +82,8 @@
 #define ID_OPTIONS                      32818
 #define ID_AXIS_XY                      32819
 #define ID_AXIS_XYZ                     32820
-#define ID_RENDER_PLACEHOLDER           32821
-#define ID_RENDER_SETFILEDIM            32822
-#define ID_RENDER_TOFILE                32823
+#define ID_OPTIONS_SETFILEDIM           32822
+#define ID_OPTIONS_TOFILE               32823
 #define ID_OPTIONS_BGMODESTREACHED      32824
 #define ID_OPTIONS_BGMODESOLID          32825
 #define ID_OPTIONS_BGMODEREPEATED       32826
@@ -99,6 +98,8 @@
 #define ID_RENDER_BFCULL                32835
 #define ID_RENDER_DYAMIC                32836
 #define ID_FOG_COLOR                    32837
+#define ID_FOG_INTENSE					32838
+#define ID_FOG_ENABLE					32839
 #define IDD_OBJECTS_DLG                 32900
 #define IDC_RADIO_OBJECT1               32901
 #define IDC_RADIO_OBJECT2               32902
@@ -109,10 +110,19 @@
 #define IDC_RADIO_OBJECT7               32907
 #define IDC_RADIO_OBJECT8               32908
 #define IDC_RADIO_OBJECT9               32909
-
-
 #define IDC_OBJECT_NAME                 32910
 #define IDC_OBJECT_ALPHA                32911 
+#define ID_MOVIE_START	                32912
+#define ID_MOVIE_STOP	                32913
+#define ID_MOVIE_GEN	                32914
+#define ID_MOVIE_INTERPO				32915
+#define ID_MOVIE_DIM					32916
+#define ID_MOVIE_FPS					32917
+#define ID_MOVIE_LEN					32918
+#define ID_MOVIE_BEZ					32919
+#define ID_MOVIE_REAL_DIM				32920
+
+
 
 // Next default values for new objects
 // 

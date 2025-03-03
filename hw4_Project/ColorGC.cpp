@@ -98,19 +98,21 @@ ColorGC ColorGC::operator+(const ColorGC& other) const
         clamp(blue),
         clamp(alpha));
 }
-
-ColorGC ColorGC::operator-(const ColorGC& other) const
+ColorGC ColorGC::operator+(const Vector4& other) const
 {
-    uint32_t red = this->getRed() - other.getRed();
-    uint32_t green = this->getGreen() - other.getGreen();
-    uint32_t blue = this->getBlue() - other.getBlue();
-    uint32_t alpha = (this->getAlpha() + other.getAlpha())/2;
-
+    uint32_t red = (uint32_t)(this->getRed() + other.getX());
+    uint32_t green = (uint32_t)(this->getGreen() + other.getY());
+    uint32_t blue = (uint32_t)(this->getBlue() + other.getZ());
+    uint32_t alpha = (uint32_t)(this->getAlpha() + other.getW());
 
     return ColorGC(clamp(red),
         clamp(green),
         clamp(blue),
         clamp(alpha));
+}
+Vector4 ColorGC::operator-(const ColorGC& other) const
+{
+    return Vector4(this->getRed() - other.getRed(), this->getGreen() - other.getGreen(), this->getBlue() - other.getBlue(), this->getAlpha() - other.getAlpha());
 }
 
 ColorGC ColorGC::operator*(const float scalar) const

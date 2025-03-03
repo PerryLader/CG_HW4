@@ -11,7 +11,7 @@
 class Geometry
 {
 private:
-	std::vector<PolygonGC*> m_polygons;
+	std::vector<std::shared_ptr<PolygonGC>> m_polygons;
 	std::string m_name;
 	BBox m_bBox;
 	ColorGC m_objColor;
@@ -20,7 +20,7 @@ private:
 	void createObjBboxLines(std::vector<Line> lines[LineVectorIndex::LAST], const ColorGC* wireColor) const;
 
 public:
-	std::unordered_map<Vector3, std::shared_ptr<Vertex>, VectorKeyHash, VectorKeyEqual> m_map;
+	std::unordered_map<Vector3, std::weak_ptr<Vertex>, VectorKeyHash, VectorKeyEqual> m_map;
 
 	//CONTRUCTOR
 	Geometry(const std::string& name, const ColorGC& color);
@@ -35,19 +35,17 @@ public:
 	void setAlpha(uint8_t alpha);
 
 	//UTILS
-	void Geometry::fillGbuffer(GBuffer& gBuffer, RenderMode& rm, long long& ll1, long long& ll2 , long long& ll3) const;
+	void fillGbuffer(GBuffer& gBuffer, RenderMode& rm) const;
 	void resetBounds();
 	void loadLines(std::vector<Line> lines[LineVectorIndex::LAST], RenderMode& renderMode, std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual>& SilhoutteMap) const;
-	void addPolygon(PolygonGC* poli);
-	Geometry* applyTransformation(const Matrix4& tMat, bool flipNormals) const;
+	void addPolygon(std::shared_ptr<PolygonGC> poli);
+	std::unique_ptr<Geometry> applyTransformation(const Matrix4& tMat, bool flipNormals) const;
 	void calcVertxNormal();
 	void backFaceCulling(bool isPerspective, const Matrix4 tMat_inv);
 	void clip();
 	bool isClippedByBBox(const Matrix4& tMat) const;
 	void print() const;
 	void fillBasicSceneColors(const Shader& shader, RenderMode& rm);
-	
-	
 };
 
 #endif

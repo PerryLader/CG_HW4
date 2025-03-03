@@ -56,12 +56,12 @@ ColorGC Shader::calcLightColorAtPos(Vector3 pos, Vector3 normal, ColorGC colorBe
 	// Calculate fog factor (linear interpolation based on distance)
 	float fogStart = -1;     // Fog starts at this distance
 	float fogEnd = 1;         // Fog fully covers at this distance
-	float fogFactor = clampF((pos.z+1) / (fogEnd - fogStart), 0.0f, 1.0f)/1.2/*Magic number just to make it look better can be daleted*/;
+	float fogFactor = clampF((pos.z+1) / (fogEnd - fogStart), 0.0f, 1.0f) * m_fogIntensity/*Magic number just to make it look better can be daleted*/;
 
 	// Blend final color with fog color
 	uint8_t tempAlpha=colorBeforeLight.getAlpha();
 	ColorGC finalColor = lightColor * colorBeforeLight + specColor;
-	//finalColor = (finalColor * (1.0f - fogFactor)) + (m_fogColor * fogFactor);
+	if(m_fogEnabled) finalColor = (finalColor * (1.0f - fogFactor)) + (m_fogColor * fogFactor);
 	finalColor.setAlpha(tempAlpha);
 	return finalColor;
 }
@@ -87,35 +87,36 @@ int width = gBuff.getWidth();
 		auto& dataSet = elem.get().second;
 		if (dataSet.empty())
 			continue;
-
 		ColorGC tmp;
 		auto start = dataSet.begin();
 		switch (mode) {
+		case SHADE_MODE::NONE:
+			tmp = start->pixColor;
+			break;
 		case SHADE_MODE::GOUROUD:
 			tmp = start->pixColor;
-			for (auto it = std::next(start); it != dataSet.end() && tmp.getAlpha() != 255; ++it) 
+			for (auto it = std::next(start); it != dataSet.end() && tmp.getAlpha() != 255; ++it)
 				tmp = ColorGC::alphaColorInterpolating(tmp, it->pixColor);
 			break;
 		case SHADE_MODE::PHONG:
-			tmp = start->m_pixType == pixType::FROM_POLYGON ?
-				 shader->calcLightColorAtPos(start->pixPos,start->pixNorm,start->polygon->getColor()) :start->pixColor;
+			tmp = start->polygon ?
+				shader->calcLightColorAtPos(start->pixPos, start->pixNorm, start->polygon->getColor()) : start->pixColor;
 			for (auto it = std::next(start); it != dataSet.end() && tmp.getAlpha() != 255; ++it) {
-				tmp = it->m_pixType == pixType::FROM_POLYGON ?
-					shader->calcLightColorAtPos(it->pixPos, it->pixNorm, it->polygon->getColor()) : it->pixColor;
+				tmp = it->polygon ?
+					ColorGC::alphaColorInterpolating(tmp, shader->calcLightColorAtPos(it->pixPos, it->pixNorm, it->polygon->getColor())): it->pixColor;
 			}
 			break;
 
 		case SHADE_MODE::SOLID:
-			tmp = start->m_pixType == pixType::FROM_POLYGON ?
+			tmp = start->polygon ?
 				start->polygon->getSceneColor() : start->pixColor;
 			for (auto it = std::next(start); it != dataSet.end() && tmp.getAlpha() != 255; ++it) {
-				tmp = it->m_pixType == pixType::FROM_POLYGON ?
+				tmp = it->polygon ?
 					ColorGC::alphaColorInterpolating(tmp, it->polygon->getSceneColor()) :
 					ColorGC::alphaColorInterpolating(tmp, it->pixColor);
 			}
 			break;
 		}
-
 		int key = elem.get().first;
 		ColorGC finalColor = ColorGC::alphaColorInterpolating(tmp, ColorGC(dest[key]));
 		dest[key] = finalColor.getARGB();
@@ -125,30 +126,21 @@ int width = gBuff.getWidth();
 void Shader::applyShading(uint32_t* dest, GBuffer& gBuff, const RenderMode& rd) const {
 
 	SHADE_MODE mode = rd.getRenderShadeFlag();
-	if (mode == SHADE_MODE::NONE)
-		return;
-
 	int numThreads = 4;
 	std::vector<std::vector<std::reference_wrapper<const std::pair<const int, GBuffer::SetType>>>> parts = gBuff.getNParts(numThreads);
 	std::vector<std::thread> threads;
-
-	auto start = std::chrono::high_resolution_clock::now();
-
 	for (int i = 0; i < numThreads; ++i) {
 		threads.emplace_back(perThreadApllyShading, dest, std::ref(gBuff), std::ref(parts[i]), rd, this);
 	}
 	for (auto& t : threads) {
 		t.join();
 	}
-
-	auto end = std::chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-
-	std::cout << "Shading execution time: " << duration.count() << " ms" << std::endl;
 }
 
-void Shader::setFogColor(const ColorGC& color)
+void Shader::setFog(const ColorGC& color, float intensity, bool enabled)
 {
+	this->m_fogIntensity = intensity;
+	this->m_fogEnabled = enabled;
 	this->m_fogColor = color;
 }
 

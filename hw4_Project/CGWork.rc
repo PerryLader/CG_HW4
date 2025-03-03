@@ -96,12 +96,10 @@ BEGIN
         MENUITEM "Back-face Cull",              ID_RENDER_BFCULL
         MENUITEM "Force Calculated Nomrals"     ID_RENDER_DYAMIC
         MENUITEM SEPARATOR
-        MENUITEM "To File",                     ID_RENDER_TOFILE
-        MENUITEM "Set File Dimensions",         ID_RENDER_SETFILEDIM
+        MENUITEM "Render Fog",                  ID_FOG_ENABLE
+        MENUITEM "Select Fog Intensity",        ID_FOG_INTENSE
+        MENUITEM "Fog Color",                   ID_FOG_COLOR
         MENUITEM SEPARATOR
-        MENUITEM "PlaceHolder",                 ID_RENDER_PLACEHOLDER, INACTIVE
-        MENUITEM SEPARATOR
-        MENUITEM "Fog color", ID_FOG_COLOR
         MENUITEM "Set object's alpha", ID_OBJ_TRANSP
     END
     POPUP "&View"
@@ -134,17 +132,34 @@ BEGIN
         MENUITEM "BG mode Solid",               ID_OPTIONS_BGMODESOLID
         MENUITEM "BG mode Streached",           ID_OPTIONS_BGMODESTREACHED
         MENUITEM "BG mode Repeated",            ID_OPTIONS_BGMODEREPEATED
+        MENUITEM SEPARATOR
+        MENUITEM "Save To File",                ID_OPTIONS_TOFILE
+        MENUITEM "Set File Dimensions",         ID_OPTIONS_SETFILEDIM
     END
     POPUP "&Light"
     BEGIN
-        POPUP "&Shading"
-        BEGIN
-            MENUITEM "No Shade",                    ID_RENDER_NOSHADE
-            MENUITEM "&Flat Shade",                 ID_RENDER_SOLID
-            MENUITEM "&Gouroud Shade",              ID_RENDER_GOUROUD
-            MENUITEM "&Phong Shade",                ID_RENDER_PHONG
-        END
+        MENUITEM "No Shade",                    ID_RENDER_NOSHADE
+        MENUITEM "&Flat Shade",                 ID_RENDER_SOLID
+        MENUITEM "&Gouroud Shade",              ID_RENDER_GOUROUD
+        MENUITEM "&Phong Shade",                ID_RENDER_PHONG
         MENUITEM "&Parameters...",              ID_LIGHT_CONSTANTS
+    END
+    POPUP "&Movie"
+    BEGIN
+        MENUITEM "&Start/Continue Recording",          ID_MOVIE_START
+        MENUITEM "&Stop Recording",                    ID_MOVIE_STOP
+        MENUITEM "&Generate Moive",                    ID_MOVIE_GEN
+        POPUP "&Settings..."
+        BEGIN
+            MENUITEM "&Set Frame Interpolation Depth", ID_MOVIE_INTERPO
+            MENUITEM "&All Interpolations Bezier",     ID_MOVIE_BEZ
+            MENUITEM SEPARATOR
+            MENUITEM "&Set Movie FPS", ID_MOVIE_FPS
+            MENUITEM "&Set Movie Length", ID_MOVIE_LEN
+            MENUITEM SEPARATOR
+            MENUITEM "&Set Movie Dimensions",          ID_MOVIE_DIM
+            MENUITEM "&Set Movie Dimensions To App",   ID_MOVIE_REAL_DIM
+        END
     END
     POPUP "&Help"
     BEGIN

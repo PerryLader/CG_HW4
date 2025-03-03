@@ -10,6 +10,8 @@
 #include "PngWrapper.h"
 #include "Shader.h"
 #include "Light.h"
+#include "MovieMaker.h"
+
 
 class ScreenCommand;
 
@@ -18,6 +20,16 @@ public:
     
     // Constructor
     Scene();
+
+    ~Scene() {
+        for (auto& camera : m_cameras)
+            delete camera;
+
+        for (auto& model : m_models)
+            delete model;
+
+        delete m_renderer;
+    }
 
     // Function to add a model to the scene
     void addModel(Model* model);
@@ -30,11 +42,13 @@ public:
  //   void setBgfromPng(bool streched, const std::string& fileLocation);
     uint32_t* getBuffer();
     void executeCommand(ScreenCommand* command);
-    void setFogColor(const ColorGC& color);
+    void setFog(const ColorGC& color , float intesity, bool enabled);
     ColorGC getFogColor()const;
-    void startRecording() { m_keyTransformations.push_back(std::pair<std::vector<Matrix4>, Camera*>()); m_movieMaker = true; }
-    void stopRecording() { if(!m_keyTransformations.empty()) m_keyTransformations.back().second = m_cameras[m_primaryCameraIndex]->clone(); m_movieMaker = false; }
-    void produceMovie(int width, int height, int fps, int length, bool linear, RenderMode& rm);
+    void startRecording();
+    bool getRecordingStatus();
+    void stopRecording();
+    void addKeyFrame();
+    void produceMovie(int width, int height, const MovieMode& mm, RenderMode& rm);
     void applyToObjectSpace(const Matrix4& tMat);
     void applyToCamera(const Matrix4& tMat);
     void setCamera(CAMERA_TYPE cameraType);
@@ -50,7 +64,7 @@ public:
 private:
     std::vector<Model*> m_models;
     std::vector<Camera*> m_cameras;
-    std::vector<std::pair<std::vector<Matrix4>, Camera*>> m_keyTransformations;
+    MovieDirector m_movieDirector;
     Renderer* m_renderer;
     int m_primaryCameraIndex;
     bool m_movieMaker; 

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef	MODULE_H
+#define	MODULE_H
 #include <iomanip>
 #include "Vector3.h"
 #include "ColorGC.h"
@@ -73,7 +74,7 @@ enum class SHADE_MODE {
 class RenderMode {
 private:
     uint32_t flags;
-    char BG_pngPath[1024];
+    char BG_pngPath[300];
     ColorGC BG_color;
     ColorGC WIRE_color;
     ColorGC NORMAL_color;
@@ -176,7 +177,7 @@ enum LineVectorIndex {
 
 struct bgInfo {
     BG_MODE mode;
-    char pngPath[1024];
+    char pngPath[300];
     ColorGC color;
 };
 
@@ -186,3 +187,6 @@ enum CAMERA_TYPE
     PRESPECTIVE = 1,
     COUNT = 2
 };
+
+int convertClipToScreen(float clipCoord, float halfSize);
+#endif

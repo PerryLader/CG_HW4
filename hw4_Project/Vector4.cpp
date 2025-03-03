@@ -39,7 +39,12 @@ Vector4 Vector4::extendOne(const Vector3& vec) {
 Vector4 Vector4::extendZero(const Vector3& vec) {
     return Vector4(vec, 0);
 }
-
+Vector4 Vector4::operator/(const float scalar) const {
+    return Vector4(this->getX() / scalar, this->getY() / scalar, this->getZ() / scalar, this->getW() / scalar);
+}
+Vector4 Vector4::operator*(const float scalar) const {
+    return Vector4(this->getX() * scalar, this->getY() * scalar, this->getZ() * scalar, this->getW() * scalar);
+}
 // Print
 void Vector4::print() const {
     std::cout << "(" << getX() << ", " << getY() << ", " << getZ() << ", " << getW() << ")" << std::endl;

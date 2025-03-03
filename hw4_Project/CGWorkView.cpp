@@ -69,6 +69,9 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 	ON_COMMAND(ID_LIGHT_CONSTANTS, OnLightConstants)
 	ON_COMMAND(ID_OBJ_TRANSP, OnObjTranspConstants)
 	ON_COMMAND(ID_FOG_COLOR, OnFogColor)
+	ON_COMMAND(ID_FOG_ENABLE, OnFogEnable)
+	ON_UPDATE_COMMAND_UI(ID_FOG_ENABLE, OnUpdateFogEnable)
+	ON_COMMAND(ID_FOG_INTENSE, OnFogIntensity)
 	ON_COMMAND(ID_CALC_P_NORMALS, OnShowCalcPolyNormals)
 	ON_UPDATE_COMMAND_UI(ID_CALC_P_NORMALS, OnUpdateShowCalcPolyNormals)
 	ON_COMMAND(ID_CALC_V_NORMALS, OnShowCalcVertNormals)
@@ -92,9 +95,9 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
 	ON_WM_MOUSEMOVE()
-	ON_COMMAND(ID_RENDER_TOFILE, OnFileRender)
-	ON_UPDATE_COMMAND_UI(ID_RENDER_TOFILE, OnUpdateFileRender)
-	ON_COMMAND(ID_RENDER_SETFILEDIM, OnFileSetDimension)
+	ON_COMMAND(ID_OPTIONS_TOFILE, OnFileRender)
+	ON_UPDATE_COMMAND_UI(ID_OPTIONS_TOFILE, OnUpdateFileRender)
+	ON_COMMAND(ID_OPTIONS_SETFILEDIM, OnFileSetDimension)
 	ON_UPDATE_COMMAND_UI(ID_TRANS_SPACE, OnUpdateFileSetDimension)
 	ON_COMMAND(ID_OPTIONS_UPLOADBGIMAGE, OnBgPicture)
 	ON_COMMAND(ID_OPTIONS_BGMODESOLID, OnBgSolid)
@@ -122,9 +125,24 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 	ON_UPDATE_COMMAND_UI(ID_RENDER_BFCULL, OnUpdateBackFaceCull)
 	ON_COMMAND(ID_RENDER_DYAMIC, OnRenderDynamic)
 	ON_UPDATE_COMMAND_UI(ID_RENDER_DYAMIC, OnUpdateRenderDynamic)
+	ON_COMMAND(ID_MOVIE_START, OnStartRecording)
+	ON_UPDATE_COMMAND_UI(ID_MOVIE_START, OnUpdateStartRecording)
+	ON_COMMAND(ID_MOVIE_STOP, OnStopRecording)
+	ON_UPDATE_COMMAND_UI(ID_MOVIE_STOP, OnUpdateStopRecording)
+	ON_COMMAND(ID_MOVIE_GEN, OnGenerateMovie)
+	ON_UPDATE_COMMAND_UI(ID_MOVIE_GEN, OnUpdateGenerateMovie)
+	ON_COMMAND(ID_MOVIE_INTERPO, OnSelectInterpolationDegree)
+	ON_COMMAND(ID_MOVIE_DIM, OnSelectMovieDim)
+	ON_COMMAND(ID_MOVIE_LEN, OnSelectMovieLength)
+	ON_COMMAND(ID_MOVIE_FPS, OnSelectMovieFps)
+	ON_COMMAND(ID_MOVIE_BEZ, OnSelectMovieBez)
+	ON_UPDATE_COMMAND_UI(ID_MOVIE_BEZ, OnUpdateOnSelectMovieBez)
+	ON_COMMAND(ID_MOVIE_REAL_DIM, OnSelectMovieRealSize)
+	ON_UPDATE_COMMAND_UI(ID_MOVIE_REAL_DIM, OnUpdateOnSelectMovieRealSize)
 	//}}AFX_MSG_MAP
 	ON_WM_TIMER()
 END_MESSAGE_MAP()
+
 
 // A patch to fix GLaux disappearance from VS2005 to VS2008
 void auxSolidCone(GLdouble radius, GLdouble height) {
@@ -161,6 +179,10 @@ CCGWorkView::CCGWorkView()
 	m_PngWidth = 0;
 	m_SaveToFile = false;
 	m_sceneSpecExp = 0;
+	fogColor = ColorGC(0, 0, 0);
+	fogIntensity = 0.8f;
+	fogEnable = false;
+	m_scene.setFog(fogColor, fogIntensity, fogEnable);
 }
 
 CCGWorkView::~CCGWorkView()
@@ -406,15 +428,9 @@ void CCGWorkView::OnFileLoad()
 
 	if (dlg.DoModal() == IDOK) {
 		m_strItdFileName = dlg.GetPathName();		// Full path and filename
-		PngWrapper p;
-		std::vector<Model*> container;
-		if(CGSkelProcessIritDataFilesToContainer(m_strItdFileName, 1, container)){
-			m_scene.addModels(container);		
-		}
-
+		m_scene.addModels(CGSkelProcessIritDataFilesToContainer(m_strItdFileName, 1));
 		Invalidate();	// force a WM_PAINT for drawing.
 	}
-
 }
 
 
@@ -615,8 +631,8 @@ void CCGWorkView::OnFogColor() {
 		{
 			// Get the selected color
 			COLORREF color = colorDlg.GetColor();
-			ColorGC gc_color(GetRValue(color), GetGValue(color), GetBValue(color));
-			m_scene.setFogColor(gc_color);
+			fogColor = ColorGC(GetRValue(color), GetGValue(color), GetBValue(color));
+			m_scene.setFog(fogColor, fogIntensity, fogEnable);
 		}
 	
 	
@@ -821,8 +837,8 @@ TransformationCommand CCGWorkView::createTransformationCommand(const Vector3& po
 		m_AspectRatio, m_nAction, m_nAxis,
 		m_tSpace, m_sensitivity);
 }
-MovieCommand CCGWorkView::createMovieCommand(int fps, int length, bool linear){
-	return MovieCommand(m_WindowWidth, m_WindowHeight,fps, length, linear, m_rendermode);
+MovieCommand CCGWorkView::createMovieCommand(){
+	return MovieCommand(m_WindowWidth, m_WindowHeight, m_moviemode, m_rendermode);
 }
 void CCGWorkView::OnLButtonDown(UINT nFlags, CPoint point) {
 	// Handle the left button down event here
@@ -836,6 +852,7 @@ void CCGWorkView::OnLButtonUp(UINT nFlags, CPoint point) {
 	m_bLeftButtonDown = false;
 	if (m_rendermode.getRenderKeyFrames())
 		m_rendermode.setRenderAddKeyFrame();
+	m_scene.addKeyFrame();
 	CView::OnLButtonUp(nFlags, point);
 }
 
@@ -932,4 +949,107 @@ void CCGWorkView::OnRenderDynamic() {
 }
 void CCGWorkView::OnUpdateRenderDynamic(CCmdUI* pCmdUI) {
 	pCmdUI->SetCheck(!m_rendermode.getRenderDynemic());
+}
+
+//////////////////////MOVIE STUFF////////////////////////////////////////
+
+void CCGWorkView::OnStartRecording() {
+	m_scene.startRecording();
+}
+void CCGWorkView::OnUpdateStartRecording(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_scene.getRecordingStatus());
+	pCmdUI->Enable(!m_scene.getRecordingStatus());
+}
+
+void CCGWorkView::OnStopRecording() {
+	m_scene.stopRecording();
+}
+
+void CCGWorkView::OnUpdateStopRecording(CCmdUI* pCmdUI) {
+	pCmdUI->Enable(m_scene.getRecordingStatus());
+}
+
+void CCGWorkView::OnUpdateGenerateMovie(CCmdUI* pCmdUI) {
+	pCmdUI->Enable(!m_scene.getRecordingStatus());
+}
+
+void CCGWorkView::OnGenerateMovie() {
+	m_scene.executeCommand(&createMovieCommand());
+}
+
+void CCGWorkView::OnSelectMovieBez() {
+	m_moviemode.mov_bez = !m_moviemode.mov_bez;
+}
+void CCGWorkView::OnUpdateOnSelectMovieBez(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_moviemode.mov_bez);
+}
+
+void CCGWorkView::OnSelectMovieRealSize() {
+	m_moviemode.mov_realSize = !m_moviemode.mov_realSize;
+}
+void CCGWorkView::OnUpdateOnSelectMovieRealSize(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_moviemode.mov_realSize);
+}
+
+void CCGWorkView::OnSelectInterpolationDegree() {
+	float min = 1;
+	float max = 10;
+	float tickWidth = 1;
+	CDynamicSliderDialog dlg("Set Movie Interpolation Depth", min, max, tickWidth);
+	if (dlg.DoModal() == IDOK)
+	{
+		m_moviemode.mov_degree = dlg.GetSliderPos();
+	}
+}
+
+
+void CCGWorkView::OnSelectMovieDim() {
+	// Create an instance of the dialog
+	DimensionDialog dlg;
+	dlg.SetDimensions(m_moviemode.mov_width, m_moviemode.mov_height);
+	// Display the dialog
+	if (dlg.DoModal() == IDOK) {
+		// Retrieve the dimensions entered by the user
+		m_moviemode.mov_width = dlg.getWidth();
+		m_moviemode.mov_height = dlg.getHeight();
+	}
+}
+void CCGWorkView::OnSelectMovieFps() {
+	float min = 6;
+	float max = 60;
+	float tickWidth = 1;
+	CDynamicSliderDialog dlg("Set Movie FPS", min, max, tickWidth);
+	if (dlg.DoModal() == IDOK)
+	{
+		m_moviemode.mov_fps = dlg.GetSliderPos();
+	}
+}
+void CCGWorkView::OnSelectMovieLength() {
+	float min = 5;
+	float max = 300;
+	float tickWidth = 1;
+	CDynamicSliderDialog dlg("Set Movie Length", min, max, tickWidth);
+	if (dlg.DoModal() == IDOK)
+	{
+		m_moviemode.mov_length = dlg.GetSliderPos();
+	}
+}
+ void CCGWorkView::OnFogIntensity() {
+	 float min = 0.05;
+	 float max = 1.0;
+	 float tickWidth = 0.05;
+	 CDynamicSliderDialog dlg("Set Movie Length", min, max, tickWidth);
+	 if (dlg.DoModal() == IDOK)
+	 {
+		 fogIntensity = dlg.GetSliderPos();
+		 m_scene.setFog(fogColor, fogIntensity, fogEnable);
+	 }
+}
+ void CCGWorkView::OnFogEnable() {
+	 fogEnable = !fogEnable;
+	 m_scene.setFog(fogColor, fogIntensity, fogEnable);
+
+}
+ void CCGWorkView::OnUpdateFogEnable(CCmdUI* pCmdUI) {
+	 pCmdUI->SetCheck(fogEnable);
 }

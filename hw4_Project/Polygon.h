@@ -75,6 +75,7 @@ private:
     bool m_hasDataNormal;
     bool m_vertHaveDataNormal;
     bool m_visible;
+
     void updateBounds(const Vertex& vert);
     void resetBounds();
     Vector3 calculateNormal() const;
@@ -83,7 +84,6 @@ public:
     // Constructors adn distrafctors    
     PolygonGC(ColorGC color);
     ~PolygonGC() = default;
-
 
     //getters and setters
     void setCalcAndDataNormalLines( Vector3 dataNormal);
@@ -110,8 +110,8 @@ public:
     void clip();
     bool isBehindCamera() const;
     size_t vertexCount() const;    
-    PolygonGC* applyTransformation(const Matrix4& transformation, bool flipNormals) const;
-    PolygonGC* applyTransformationAndFillMap(const Matrix4& transformation, bool flipNormals, std::unordered_map<Vector3, std::shared_ptr<Vertex>, VectorKeyHash, VectorKeyEqual>& map) const;
+    std::shared_ptr<PolygonGC> applyTransformation(const Matrix4& transformation, bool flipNormals) const;
+    std::shared_ptr<PolygonGC> applyTransformationAndFillMap(const Matrix4& transformation, bool flipNormals, std::unordered_map<Vector3, std::shared_ptr<Vertex>, VectorKeyHash, VectorKeyEqual>& map) const;
     void loadSilhoutteToContainer(std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual>& SilhoutteMap)const;
     void loadVertexEdgesToContainer(std::vector<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>>& container, const ColorGC* overridingColor) const;
     void loadEdgesToContainer(std::vector<Line>& container, const ColorGC* overridingColor) const;
@@ -119,7 +119,7 @@ public:
     void loadVertNLinesFromData(std::vector<Line>& container, const ColorGC* overridingColor)const;
     void loadVertNLinesFromCalc(std::vector<Line>& container, const ColorGC* overridingColor) const;
     void loadLines(std::vector<Line> lines[LineVectorIndex::LAST], RenderMode& renderMode, std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual>& SilhoutteMap) const;
-    void fillGbuffer(GBuffer& gBuffer, const RenderMode& rm, long long& ll1, long long& ll2, long long& ll3)const;
+    void fillGbuffer(GBuffer& gBuffer, const RenderMode& rm)const;
     void fillBasicSceneColors(const Shader& shader, const RenderMode& rm);
 
     //printers

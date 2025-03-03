@@ -11,8 +11,6 @@
 ******************************************************************************/
 
 
-//Shalom My name is Shachar
-
 class SavingModel {
 public:
 	// Public method to access the single instance
@@ -21,10 +19,10 @@ public:
 		return instance;
 	}
 	static bool pushGeom(Geometry* Geom) {
-		if(Geom && getInstance().m_models){
-			StaticModel* model = new StaticModel(Geom);
+		if(Geom){
+			Model* model = new StrongModel(Geom);
 			//model->centerizedGeometry();
-			getInstance().m_models->push_back(model);
+			getInstance().m_models.push_back(model);
 			return true;
 		}
 		return false;
@@ -34,28 +32,29 @@ public:
 	SavingModel& operator=(const SavingModel&) = delete;
 
 	// Method to set the Model pointer
-	void set(std::vector<Model*>* container) {
-		this->m_models = container;
+	void set() {
+		this->m_models.clear();
 	}
 	// Method to clear the Model pointer
 	void handle_missuse(bool insertion_flag) const{
 		if (insertion_flag)
 			return;
-		for (Model* model : *m_models) {
+		for (Model* model : m_models) {
 			delete model;
 		}
-		m_models->clear();
 	}
-	void release() {
-		this->m_models = nullptr;
+
+	std::vector<Model*> release() {
+		std::vector<Model*> res = m_models;
+		m_models.clear();
+		return res;
 	}
 
 private:
 	// Private constructor to prevent direct instantiation
-	SavingModel() : m_models(nullptr) {
-	}
+	SavingModel() {}
 	// Pointer to the Model object
-	std::vector<Model*>* m_models;
+	std::vector<Model*> m_models;
 };
 
 int tessellation = 20;
@@ -92,13 +91,13 @@ IPFreeformConvStateStruct CGSkelFFCState = {
 *   bool:		false - fail, true - success.                                *
 *****************************************************************************/
 
-bool CGSkelProcessIritDataFilesToContainer(CString& FileNames, int NumFiles, std::vector<Model*>& Container) {
-	SavingModel::getInstance().set(&Container);
+std::vector<Model*> CGSkelProcessIritDataFilesToContainer(CString& FileNames, int NumFiles) {
+	SavingModel::getInstance().set();
 	bool res;
 	SavingModel::getInstance().handle_missuse(res = CGSkelProcessIritDataFiles(FileNames, NumFiles));
-	SavingModel::getInstance().release();
-	return res;
+	return SavingModel::getInstance().release();
 }
+
 void CGSkelSetTes(int tes) {
 	tessellation = tes;
 }
@@ -285,9 +284,7 @@ bool CGSkelStoreData(IPObjectStruct* PObj_src, Geometry** PGeom_dest)
 
 
 		PVertex = PPolygon->PVertex;
-		PolygonGC* newPoly;
-		
-			newPoly = new PolygonGC(color);
+		std::shared_ptr<PolygonGC> newPoly = std::make_shared<PolygonGC>(color);
 		do {			     /* Assume at least one edge in polygon! */
 			/* code handeling all vertex/normal/texture coords */
 			std::shared_ptr<Vertex> newVert;
@@ -296,28 +293,29 @@ bool CGSkelStoreData(IPObjectStruct* PObj_src, Geometry** PGeom_dest)
 			if (IP_HAS_NORMAL_VRTX(PVertex))
 			{
 				if (shape->m_map.find(pos) == shape->m_map.end()) {
-					shape->m_map[pos]= std::shared_ptr<Vertex>( new Vertex(pos,
+					newVert = std::make_shared<Vertex>(pos,
 						Vector3(PVertex->Normal[0],
-								PVertex->Normal[1],
-								PVertex->Normal[2])));
-					newVert = shape->m_map[pos];
+							PVertex->Normal[1],
+							PVertex->Normal[2])
+						, color);
 					newVert->addNeigberPolygon(newPoly);
+					shape->m_map[pos] = newVert;
 				}
 				else
 				{
-					newVert = shape->m_map[pos];
+					newVert = shape->m_map[pos].lock();
 					newVert->addNeigberPolygon(newPoly);					
 				}
 			}
 			else {
 				if (shape->m_map.find(pos) == shape->m_map.end()) {
-					shape->m_map[pos] = std::shared_ptr<Vertex>(new Vertex(pos));
-					newVert = shape->m_map[pos];
+					newVert = std::make_shared<Vertex>(pos, color);
 					newVert->addNeigberPolygon(newPoly);
+					shape->m_map[pos] = newVert;
 				}
 				else
 				{
-					newVert = shape->m_map[pos];
+					newVert = shape->m_map[pos].lock();
 					newVert->addNeigberPolygon(newPoly);
 				}
 			}

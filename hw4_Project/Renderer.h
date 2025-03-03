@@ -21,11 +21,10 @@ public:
     ~Renderer();
    // void addModel(Model* model);
     uint32_t* getBuffer() const;
-    void render(const Camera* camera, int width, int height, const std::vector<Model*> models, RenderMode& renderMode);
-    void generateMovie(double movieLength, double frameRate, const std::vector<Model*> models, RenderMode& renderMode);
+    void render(const Camera* camera, int width, int height, const std::vector<Model*>& models, RenderMode& renderMode);
     void updateLighting(LightParams lights[MAX_LIGHT], LightParams ambient, int sceneSpecExp);
     void clear(bool clearBg);
-    void setFogColor(const ColorGC& color);
+    void setFog(const ColorGC& color, float intensity, bool enabled);
     ColorGC getFogColor()const;
 
 private:
@@ -34,9 +33,6 @@ private:
     int m_width, m_height;
     bgInfo m_bgInfo;
     Shader m_shader;
-    std::vector<Matrix4> m_keyTMats;
-    std::vector<Vector3> m_keyCameraPos;
-    //BezierInterpolator interpolator;
 
     void drawWireFrame(std::vector<Line> lines[LineVectorIndex::LAST], GBuffer& gBuff);
     void drawSolid(Shader& shader);

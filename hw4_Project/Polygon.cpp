@@ -245,7 +245,6 @@ bool checkPointRelativeToPlane(const Vector3& planeLoc, const Vector3& point,boo
             return (point.z <= 1) ? true : false;
         }
     }
-    std::cout << "here4";
     throw;
 }
 void PolygonGC::clip()
@@ -295,9 +294,9 @@ void PolygonGC::clip()
     this->resetBounds();
 }
 // Function to apply a transformation matrix to all vertices
-PolygonGC* PolygonGC::applyTransformation(const Matrix4& transformation, bool flipNormals) const
+std::shared_ptr<PolygonGC> PolygonGC::applyTransformation(const Matrix4& transformation, bool flipNormals) const
 {
-    PolygonGC* newPoly = new PolygonGC(this->m_primeColor);
+    std::shared_ptr<PolygonGC> newPoly = std::make_shared<PolygonGC>(this->m_primeColor);
     for (const auto& vertex : m_vertices) {
         newPoly->addVertex(vertex->getTransformedVertex(transformation, flipNormals));
     }
@@ -313,10 +312,10 @@ PolygonGC* PolygonGC::applyTransformation(const Matrix4& transformation, bool fl
     }
     return newPoly;
 }
-PolygonGC* PolygonGC::applyTransformationAndFillMap(const Matrix4& transformation, bool flipNormals,
+std::shared_ptr<PolygonGC> PolygonGC::applyTransformationAndFillMap(const Matrix4& transformation, bool flipNormals,
     std::unordered_map<Vector3, std::shared_ptr<Vertex>, VectorKeyHash, VectorKeyEqual> &map) const
 {
-    PolygonGC* newPoly = new PolygonGC(this->m_primeColor);
+    std::shared_ptr<PolygonGC> newPoly = std::make_shared<PolygonGC>(this->m_primeColor);
     for (const auto& vertex : m_vertices) {
         std::shared_ptr<Vertex> tempVer = vertex->getTransformedVertex(transformation, flipNormals);
         map[tempVer->loc()] = tempVer;
@@ -403,7 +402,6 @@ void PolygonGC::loadEdgesToContainer(std::vector<Line>& container, const ColorGC
 void PolygonGC::loadLines(std::vector<Line> lines[LineVectorIndex::LAST], RenderMode& renderMode, std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual>& SilhoutteMap) const {
     const ColorGC* wfClrOverride = renderMode.getRenderOverrideWireColorFlag() ? &renderMode.getWireColor() : &this->m_primeColor;
     const ColorGC* nrmClrOverride = renderMode.getRenderOverrideNormalColorFlag() ? &renderMode.getNormalColor() : &this->m_primeColor;
-    //std::vector<Line> bBoxLines = this->getBBox().getLinesOfBbox(*wireColor);
     if (renderMode.getSilohetteFlag()) loadSilhoutteToContainer(SilhoutteMap);
     if (!renderMode.getRenderCulledFlag() || renderMode.getRenderCulledFlag() && this->isVisible()) {
         if (renderMode.getWireFrameFlag()) loadEdgesToContainer(lines[LineVectorIndex::SHAPES], wfClrOverride);
@@ -467,9 +465,6 @@ int findIntersectionAndFitToScreen(std::pair<std::shared_ptr<Vertex>, std::share
 bool compareEdgesByY(const std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>& a, const std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>& b) {
     return min(a.first->loc().y, a.second->loc().y) < min(b.first->loc().y, b.second->loc().y);
 }
-int convertClipToScreen(float clipCoord, float halfSize) {
-    return (int)round((clipCoord * halfSize) + halfSize);
-}
 
 void updateActiveEdges(int y, float halfhight, std::vector<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>>& lineVector, std::vector<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>>::iterator& currentLine, std::unordered_set<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>*>& activeEdges) {
     while (currentLine != lineVector.end() && min(convertClipToScreen(currentLine->first->loc().y, halfhight), convertClipToScreen(currentLine->second->loc().y, halfhight)) == y) {
@@ -526,9 +521,8 @@ void updateLineVertexes(std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Verte
 }
 
 
-void PolygonGC::fillGbuffer(GBuffer& gBuffer, const RenderMode& rm, long long& ll1, long long& ll2, long long& ll3) const
+void PolygonGC::fillGbuffer(GBuffer& gBuffer, const RenderMode& rm) const
 {
-    auto start = std::chrono::high_resolution_clock::now();
     const int width = gBuffer.getWidth(); 
     const int hight = gBuffer.getHeight();
     const int halfWidth = width / 2;
@@ -545,11 +539,8 @@ void PolygonGC::fillGbuffer(GBuffer& gBuffer, const RenderMode& rm, long long& l
     std::unordered_set<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>*> activeEdges;
     auto currentLine = lineVector.begin();
     // Iterate over y-ranges
-    auto end = std::chrono::high_resolution_clock::now();
-    ll1 += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     for (int y = yMin; y < yMax; ++y) {
         // Update active edges
-        start = std::chrono::high_resolution_clock::now();
         updateActiveEdges(y, halfhight, lineVector, currentLine, activeEdges);
         // Process active edges
         Vertex smallestVecX(Vector3(FLT_MAX, FLT_MAX, FLT_MAX));
@@ -563,15 +554,9 @@ void PolygonGC::fillGbuffer(GBuffer& gBuffer, const RenderMode& rm, long long& l
         int bigX = convertClipToScreen(biggestVecX.loc().x, halfWidth); // min(width, transformToScreenSpace(biggestVecX.loc().x, halfWidth) + 1);
         smallestVecX.setFromInterpolation(*xMinEdge->first, *xMinEdge->second, t_xmin , false, rm.getRenderShadeGouroudFlag(), rm.getRenderShadePhongFlag() && rm.getPolygonsUseCNormalFlag(), rm.getRenderShadePhongFlag() && rm.getRenderDynemic());
         biggestVecX.setFromInterpolation(*xMaxEdge->first, *xMaxEdge->second, t_xmax, false, rm.getRenderShadeGouroudFlag(), rm.getRenderShadePhongFlag() && rm.getPolygonsUseCNormalFlag(), rm.getRenderShadePhongFlag() && rm.getRenderDynemic());
-        end = std::chrono::high_resolution_clock::now();
-        ll2 += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-        start = std::chrono::high_resolution_clock::now();
-        ColorGC colorStep = Vertex::calculate_delta_color(smallestVecX, biggestVecX, bigX - smallX);
-        Vector3 locStep = Vertex::calculate_delta_location(smallestVecX, biggestVecX, bigX - smallX);
-        //Vector3 normDirStep = Vertex::calculate_delta_direction(smallestVecX, biggestVecX, bigX - smallX, rm.getRenderDynemic());
+        ColorGC color;
         for (int x = smallX; x < bigX; x++)
         {
-            /*
             float t2 = (double)(x - smallX) / (bigX - smallX);
             Line tmp = Line();
             if (rm.getRenderShadePhongFlag()) {
@@ -580,16 +565,11 @@ void PolygonGC::fillGbuffer(GBuffer& gBuffer, const RenderMode& rm, long long& l
                 else
                     tmp = Vertex::interpolate_cnormal(smallestVecX, biggestVecX, t2);
             }
-            gBuffer.push(x, y, GData(Vertex::interpolate_loc(smallestVecX, biggestVecX, t2).z, this, rm.getRenderShadeGouroudFlag() ? Vertex::interpolate_color(smallestVecX, biggestVecX, t2) : ColorGC(), tmp.m_a, tmp.direction(), pixType::FROM_POLYGON));
-            */
-            int step = x - smallX;
-            Vector3 loc = smallestVecX.loc() + locStep * step;
-            ColorGC color = smallestVecX.getColor() + colorStep * step;
-            //Vector3 normDir = smallestVecX.getColor() + colorStep * step;
-            gBuffer.push(x, y, GData(loc.z, this, color, loc, Vector3(), pixType::FROM_POLYGON));
+            else
+                tmp.m_a = Vertex::interpolate_loc(smallestVecX, biggestVecX, t2);
+            color = rm.getRenderShadeGouroudFlag() ? Vertex::interpolate_color(smallestVecX, biggestVecX, t2) : color;
+            gBuffer.push(x, y, GData(this, color, tmp.m_a, tmp.direction()));
         }
-        end = std::chrono::high_resolution_clock::now();
-        ll3 += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     }
 }
 
@@ -694,6 +674,6 @@ Vector3 PolygonGC::calculateNormal() const {
     }
     const Vector3 vec1 = m_vertices.at(1)->loc() - m_vertices.at(0)->loc();
     const Vector3 vec2 = m_vertices.at(2)->loc() - m_vertices.at(1)->loc();
-    return Vector3::cross(vec1,vec2 ).normalized();
+    return Vector3::cross(vec1,vec2).normalized();
 
 }

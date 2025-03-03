@@ -49,15 +49,13 @@ protected:
 
 class MovieCommand : public ScreenCommand {
 public:
-    MovieCommand(int width, int height, int fps, int movie_length, bool linear, RenderMode& rd_mode)
-        : ScreenCommand(width, height), fps(fps), movie_length(movie_length), linear(linear), rd_mode(rd_mode){}
+    MovieCommand(int width, int height, MovieMode& mm, RenderMode& rd_mode)
+        : ScreenCommand(width, height), mov_mode(mm), rd_mode(rd_mode){}
     void execute(Scene& scene) override {
-            scene.produceMovie( screenWidth, screenHeigth, fps, movie_length, linear, rd_mode);
+            scene.produceMovie( screenWidth, screenHeigth, mov_mode, rd_mode);
     }
 protected:
-    int fps;
-    int movie_length;
-    bool linear;
+    MovieMode& mov_mode;
     RenderMode& rd_mode;
 };
 #endif //COMMANDS_H

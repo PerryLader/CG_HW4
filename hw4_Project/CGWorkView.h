@@ -33,6 +33,7 @@ public:
 private:
 	Scene m_scene;
 	RenderMode m_rendermode;
+	MovieMode m_moviemode;
 	int m_nAxis;				// Axis of Action, X Y or Z
 	int m_nAction;				// Rotate, Translate, Scale
 	int m_nView;				// Orthographic, perspective
@@ -54,9 +55,12 @@ private:
 	LightParams m_ambientLight;		//ambient light (only RGB is used)
 	int m_sceneSpecExp;		//ambient light (only RGB is used)
 
+	ColorGC fogColor;
+	float fogIntensity;
+	bool fogEnable;
 	RenderCommand createRenderingCommand(int width, int height);
 	TransformationCommand createTransformationCommand(const Vector3& point);
-	MovieCommand createMovieCommand(int fps, int length, bool linear);
+	MovieCommand createMovieCommand();
 
 	// Overrides
 		// ClassWizard generated virtual function overrides
@@ -184,14 +188,24 @@ protected:
 	afx_msg void OnUpdateBackFaceCull(CCmdUI* pCmdUI);
 	afx_msg void OnRenderDynamic();
 	afx_msg void OnUpdateRenderDynamic(CCmdUI* pCmdUI);
-	/// <summary>
-	/// 
-	/// </summary>
-	afx_msg void OnRecord();
-	afx_msg void OnUpdateRecord(CCmdUI* pCmdUI);
-	afx_msg void OnSetMovieParams();
-	afx_msg void OnCreateMovie();
-	afx_msg void OnUpdateCreateMovie(CCmdUI* pCmdUI);
+	afx_msg void OnStartRecording();
+	afx_msg void OnUpdateStartRecording(CCmdUI* pCmdUI);
+	afx_msg void OnStopRecording();
+	afx_msg void OnUpdateStopRecording(CCmdUI* pCmdUI);
+	afx_msg void OnSelectInterpolationDegree();
+	afx_msg void OnUpdateGenerateMovie(CCmdUI* pCmdUI);
+	afx_msg void OnGenerateMovie();
+	afx_msg void OnSelectMovieDim();
+	afx_msg void OnSelectMovieLength();
+	afx_msg void OnSelectMovieFps();
+	afx_msg void OnSelectMovieBez();
+	afx_msg void OnUpdateOnSelectMovieBez(CCmdUI* pCmdUI);
+	afx_msg void OnSelectMovieRealSize();
+	afx_msg void OnUpdateOnSelectMovieRealSize(CCmdUI* pCmdUI);
+	afx_msg void OnFogIntensity();
+	afx_msg void OnFogEnable();
+	afx_msg void OnUpdateFogEnable(CCmdUI* pCmdUI);
+
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 public:

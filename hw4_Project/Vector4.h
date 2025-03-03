@@ -41,6 +41,9 @@ public:
     static Vector4 extendOne(const Vector3& vec);
     static Vector4 extendZero(const Vector3& vec);
 
+    Vector4 operator/(const float scalar) const;
+    Vector4 operator*(const float scalar) const;
+
     // Print
     void print() const;
 

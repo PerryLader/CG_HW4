@@ -15,12 +15,11 @@
 #include "ip_cnvrt.h"
 #include "symb_lib.h"
 #include "Model.h"
-#include "StaticModel.h"
 #include "Geometry.h"
 
 
 
-bool CGSkelProcessIritDataFilesToContainer(CString& FileNames, int NumFiles, std::vector<Model*>& Container);
+std::vector<Model*> CGSkelProcessIritDataFilesToContainer(CString& FileNames, int NumFiles);
 bool CGSkelProcessIritDataFiles(CString& FileNames, int NumFiles);
 void CGSkelDumpOneTraversedObject(IPObjectStruct* PObj, IrtHmgnMatType Mat, void* Data);
 int CGSkelGetObjectColor(IPObjectStruct* PObj, double RGB[3]);

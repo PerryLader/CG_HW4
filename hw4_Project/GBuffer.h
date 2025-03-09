@@ -50,7 +50,7 @@ public:
 
     using BufferType = std::unordered_map<int, SetType>;
 
-    GBuffer(size_t width, size_t height) : width_(width), height_(height), bufferDemo_(height, std::vector<SetType*>(width, nullptr)), mutexes(64) {
+    GBuffer(size_t width, size_t height) : width_(width), height_(height), bufferDemo_(height+1, std::vector<SetType*>(width+1, nullptr)), mutexes(64) {
     }
 
     ~GBuffer() {

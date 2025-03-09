@@ -97,20 +97,30 @@ void Renderer::render(const Camera* camera, int width, int height, const std::ve
     lines[0].push_back(y_axis.getTransformedLine(viewProjectionMatrix));
     lines[0].push_back(z_axis.getTransformedLine(viewProjectionMatrix));
     this->drawWireFrame(lines, gBuffer);
+    // Create a vector to hold threads
+    std::vector<std::thread> threads;
+
     for (const auto& model : models) {
-        std::vector<Line> lines[LineVectorIndex::LAST];
-        std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual> SilhoutteMap;
-        std::unique_ptr<Geometry> transformedGeometry = model->applyTransformation(viewProjectionMatrix, renderMode.getRenderWithFlipedNormalsFlag());
-        if (transformedGeometry) {
-            transformedGeometry->clip();      
-            transformedGeometry->backFaceCulling(camera->isPerspective(), projectionAspectMatrix_inv);
-            transformedGeometry->fillBasicSceneColors(m_shader,renderMode);
-            transformedGeometry->loadLines(lines, renderMode, SilhoutteMap);
-            this->drawWireFrame(lines, gBuffer);
-            if(!renderMode.getRenderShadeNoneFlag()) transformedGeometry->fillGbuffer(gBuffer , renderMode);
-            if (renderMode.getSilohetteFlag()) this->drawSilhoutteEdges(SilhoutteMap, gBuffer);
-            transformedGeometries.push_back(std::move(transformedGeometry));
-        }
+        threads.emplace_back([&, model]() {
+            std::vector<Line> lines[LineVectorIndex::LAST];
+            std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual> SilhoutteMap;
+            std::unique_ptr<Geometry> transformedGeometry = model->applyTransformation(viewProjectionMatrix, renderMode.getRenderWithFlipedNormalsFlag(),1);
+            if (transformedGeometry) {
+                transformedGeometry->clip();
+                transformedGeometry->backFaceCulling(camera->isPerspective(), projectionAspectMatrix_inv);
+                transformedGeometry->fillBasicSceneColors(m_shader, renderMode);
+                transformedGeometry->loadLines(lines, renderMode, SilhoutteMap);
+                this->drawWireFrame(lines, gBuffer);
+                if (!renderMode.getRenderShadeNoneFlag())
+                    transformedGeometry->fillGbuffer(gBuffer, renderMode);
+                if (renderMode.getSilohetteFlag())
+                    this->drawSilhoutteEdges(SilhoutteMap, gBuffer);
+                transformedGeometries.push_back(std::move(transformedGeometry));
+            }
+        });
+    }
+    for (auto& thread : threads) {
+        thread.join();
     }
     m_shader.applyShading(m_Buffer, gBuffer, renderMode);
 }

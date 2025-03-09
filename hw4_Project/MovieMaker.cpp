@@ -12,6 +12,9 @@ int MovieDirector::MovieScene::size() const {
 Camera*& MovieDirector::MovieScene::camera(){
     return m_origCamera;
 }
+void MovieDirector::MovieScene::set_camera(Camera* camera) {
+    m_origCamera = camera;
+}
 const Camera* MovieDirector::MovieScene::ccamera() const{
     return m_origCamera;
 }
@@ -32,16 +35,6 @@ void MovieDirector::MovieScene::apply_to_frames(const Matrix4& tmat , bool L, bo
 
 }
 
-std::vector<Matrix4> MovieDirector::MovieScene::getStackedTransformations() const{
-    std::vector<Matrix4> stackedTransformations;
-    //Matrix4 combinedTransform = Matrix4::identity();
-
-    //for (int i = 0; i < m_keyTransformations.size(); ++i) {
-    //    combinedTransform =  combinedTransform * m_keyTransformations[i];
-    //    stackedTransformations.push_back(combinedTransform);
-    //}
-    return stackedTransformations;
-}
 std::vector<Matrix4> MovieDirector::MovieScene::getLTransformations() const {
     std::vector<Matrix4> res(m_keyTransformations.size());
     std::transform(m_keyTransformations.begin(), m_keyTransformations.end(), res.begin(),
@@ -68,10 +61,8 @@ Matrix4 MovieDirector::MovieScene::getObjCurrent() const {
 }
 
 void MovieDirector::create_new_scene(const Camera* camera) {
-    MovieScene mv = MovieScene();
-    mv.camera() = camera->clone();
-    mv.push_back(Matrix4::identity(), false);
-    m_movie_scenes.push_back(mv);
+    m_movie_scenes.emplace_back(camera);
+    m_movie_scenes.back().push_back(Matrix4::identity(), false);
 }
 
 void MovieDirector::addKeyFrame() {
@@ -143,16 +134,6 @@ void MovieDirector::produceMovie(int width, int height, const MovieMode& mm, Ren
         std::vector<double> timeVec = generateTimeVector(frames_per_scene[j]);
         std::vector<Matrix4> LeftkeyFrameInterpolants = m_movie_scenes[j].getLTransformations();
         std::vector<Matrix4> RightkeyFrameInterpolants = m_movie_scenes[j].getRTransformations();
-        //for (int i = 0; i < m_movie_scenes[j].size(); ++i) {
-        //    Camera* interpolatedCamera = m_movie_scenes[j].camera()->clone();
-        //    interpolatedCamera->translate(LeftkeyFrameInterpolants[i]);
-        //    interpolatedCamera->right_side_translate(RightkeyFrameInterpolants[i]);
-        //    renderer->render(interpolatedCamera, mov_width, mov_height, models, rm);
-        //    sprintf(frameName, "movie/test%d.png", i);
-        //    PngWrapper png = PngWrapper(frameName, mov_width, mov_height);
-        //    png.WriteFromBuffer(renderer->getBuffer());
-        //    delete interpolatedCamera;
-        //}
         for (int i = 0; i < timeVec.size(); ++i) {
             std::vector<Model*> weakModels = copyModels(models);
             Matrix4 objectCorrection = m_movie_scenes[j].getObjOrigin();

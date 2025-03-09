@@ -33,6 +33,7 @@ class MovieDirector
 
         const Camera* ccamera() const;
         Camera*& camera();
+        void set_camera(Camera* camera);
 
         std::vector<Matrix4> getStackedTransformations() const;
         std::vector<Matrix4> getLTransformations() const;
@@ -41,7 +42,8 @@ class MovieDirector
         void apply_to_frames(const Matrix4& tmat, bool L, bool R, bool rtl);
         void applyObjTrans(const Matrix4& tMat);
         Matrix4 getObjOrigin() const;
-        Matrix4 getObjCurrent() const;
+        Matrix4 getObjCurrent() const;    
+        MovieScene(const Camera* camera) : m_origCamera(camera->clone()) {}
 
     private:
         std::vector <std::pair<Matrix4, Matrix4>> m_keyTransformations;

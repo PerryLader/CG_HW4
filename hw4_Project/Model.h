@@ -19,7 +19,7 @@ public:
 	
 	std::string getModelsName() const;
 
-	std::unique_ptr<Geometry> applyTransformation(const Matrix4 viewProjectionMatrix, bool flipNormals) const;
+	std::unique_ptr<Geometry> applyTransformation(const Matrix4 viewProjectionMatrix, bool flipNormals, int partitions) const;
 
 	void modifiyTransformation(const Matrix4& tMat);
 

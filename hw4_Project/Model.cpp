@@ -30,10 +30,10 @@ void Model::modifiyTransformation(const Matrix4& tMat) {
     mTransform = tMat * mTransform;
 }
 
-std::unique_ptr<Geometry> Model::applyTransformation(const Matrix4 viewProjectionMatrix, bool flipNormals) const
+std::unique_ptr<Geometry> Model::applyTransformation(const Matrix4 viewProjectionMatrix, bool flipNormals, int partitions) const
 {
 	const Matrix4 fTransform = viewProjectionMatrix * mTransform;
-	return (!T->isClippedByBBox(fTransform)) ? T->applyTransformation(fTransform, flipNormals) : nullptr;
+	return (!T->isClippedByBBox(fTransform)) ? T->applyTransformation(fTransform, flipNormals, partitions) : nullptr;
 }
 
 std::string Model::getModelsName() const

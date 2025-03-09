@@ -79,7 +79,7 @@ void Renderer::render(const Camera* camera, int width, int height, const std::ve
     invalidate(renderMode, forceAll);
     memcpy(m_Buffer, m_BgBuffer, sizeof(uint32_t) * m_width * m_height);
     GBuffer gBuffer(m_width, m_height);
-    Matrix4 aspectRatioMatrix = Matrix4::scaling(Vector3(1.0f / (width / height), 1.0f, 1.0f));
+    Matrix4 aspectRatioMatrix = Matrix4::scaling(Vector3((float)height / (float)width, 1.0f, 1.0f));
     const Matrix4 projectionAspectMatrix = aspectRatioMatrix * camera->getProjectionMatrix();
     const Matrix4 viewProjectionMatrix = projectionAspectMatrix  * camera->getViewMatrix();
     const Matrix4 projectionAspectMatrix_inv = projectionAspectMatrix.irit_inverse();

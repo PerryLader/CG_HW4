@@ -33,20 +33,23 @@ Matrix4::Matrix4(const Vector4& v1, const Vector4& v2, const Vector4& v3, const 
 Matrix4 Matrix4::operator+(const Matrix4& other) const {
     Matrix4 result;
     for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            result.m[i][j] = m[i][j] + other.m[i][j];
-        }
+        __m128 row1 = _mm_loadu_ps(&m[i][0]);
+        __m128 row2 = _mm_loadu_ps(&other.m[i][0]);
+        __m128 sum = _mm_add_ps(row1, row2);
+        _mm_storeu_ps(&result.m[i][0], sum);
     }
     return result;
 }
+
 
 // Subtraction
 Matrix4 Matrix4::operator-(const Matrix4& other) const {
     Matrix4 result;
     for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            result.m[i][j] = m[i][j] - other.m[i][j];
-        }
+        __m128 row1 = _mm_loadu_ps(&m[i][0]);
+        __m128 row2 = _mm_loadu_ps(&other.m[i][0]);
+        __m128 diff = _mm_sub_ps(row1, row2);
+        _mm_storeu_ps(&result.m[i][0], diff);
     }
     return result;
 }
@@ -54,86 +57,108 @@ Matrix4 Matrix4::operator-(const Matrix4& other) const {
 // Scaling
 Matrix4 Matrix4::operator*(const float scalar) const {
     Matrix4 result;
+    __m128 scalarValue = _mm_set1_ps(scalar);
     for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            result.m[i][j] = m[i][j] * scalar;
-        }
+        __m128 row = _mm_loadu_ps(&m[i][0]);
+        __m128 scaled = _mm_mul_ps(row, scalarValue);
+        _mm_storeu_ps(&result.m[i][0], scaled);
     }
     return result;
 }
+
 
 // Division
 Matrix4 Matrix4::operator/(const float scalar) const {
     Matrix4 result;
+    __m128 scalarValue = _mm_set1_ps(scalar);
     for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            result.m[i][j] = m[i][j] / scalar;
-        }
+        __m128 row = _mm_loadu_ps(&m[i][0]);
+        __m128 divided = _mm_div_ps(row, scalarValue);
+        _mm_storeu_ps(&result.m[i][0], divided);
     }
     return result;
 }
 
-// Compound assignment operators
+
 Matrix4& Matrix4::operator+=(const Matrix4& other) {
     for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            m[i][j] += other.m[i][j];
-        }
+        __m128 row1 = _mm_loadu_ps(&m[i][0]);
+        __m128 row2 = _mm_loadu_ps(&other.m[i][0]);
+        __m128 sum = _mm_add_ps(row1, row2);
+        _mm_storeu_ps(&m[i][0], sum);
     }
     return *this;
 }
 
 Matrix4& Matrix4::operator-=(const Matrix4& other) {
     for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            m[i][j] -= other.m[i][j];
-        }
+        __m128 row1 = _mm_loadu_ps(&m[i][0]);
+        __m128 row2 = _mm_loadu_ps(&other.m[i][0]);
+        __m128 diff = _mm_sub_ps(row1, row2);
+        _mm_storeu_ps(&m[i][0], diff);
     }
     return *this;
 }
 
 Matrix4& Matrix4::operator*=(const float scalar) {
+    __m128 scalarValue = _mm_set1_ps(scalar);
     for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            m[i][j] *= scalar;
-        }
+        __m128 row = _mm_loadu_ps(&m[i][0]);
+        __m128 scaled = _mm_mul_ps(row, scalarValue);
+        _mm_storeu_ps(&m[i][0], scaled);
     }
     return *this;
 }
 
 Matrix4& Matrix4::operator/=(const float scalar) {
+    __m128 scalarValue = _mm_set1_ps(scalar);
     for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            m[i][j] /= scalar;
-        }
+        __m128 row = _mm_loadu_ps(&m[i][0]);
+        __m128 divided = _mm_div_ps(row, scalarValue);
+        _mm_storeu_ps(&m[i][0], divided);
     }
     return *this;
 }
+
 
 // Multiplication
 Matrix4 Matrix4::operator*(const Matrix4& other) const {
     Matrix4 result;
     for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 4; ++j) {
-            result.m[i][j] = 0.0f;
+            __m128 sum = _mm_setzero_ps();
             for (int k = 0; k < 4; ++k) {
-                result.m[i][j] += m[i][k] * other.m[k][j];
+                __m128 a = _mm_set1_ps(m[i][k]);
+                __m128 b = _mm_loadu_ps(&other.m[k][0]);
+                sum = _mm_add_ps(sum, _mm_mul_ps(a, b));
             }
+            float sumArray[4];
+            _mm_storeu_ps(sumArray, sum);
+            result.m[i][j] = sumArray[j];
         }
     }
     return result;
 }
 
+
 // Multiplication with Vector4
 Vector4 Matrix4::operator*(const Vector4& vec) const {
-    float vecX = vec.getX(), vecY = vec.getY(), vecZ = vec.getZ(), vecW = vec.getW();
-    return Vector4(
-        m[0][0] * vecX + m[0][1] * vecY + m[0][2] * vecZ + m[0][3] * vecW,
-        m[1][0] * vecX + m[1][1] * vecY + m[1][2] * vecZ + m[1][3] * vecW,
-        m[2][0] * vecX + m[2][1] * vecY + m[2][2] * vecZ + m[2][3] * vecW,
-        m[3][0] * vecX + m[3][1] * vecY + m[3][2] * vecZ + m[3][3] * vecW
-    );
+    __m128 vecValues = _mm_set_ps(vec.getW(), vec.getZ(), vec.getY(), vec.getX());
+    __m128 result[4];
+
+    for (int i = 0; i < 4; ++i) {
+        __m128 row = _mm_loadu_ps(&m[i][0]);
+        result[i] = _mm_dp_ps(row, vecValues, 0xF1);
+    }
+
+    float resultArray[4];
+    for (int i = 0; i < 4; ++i) {
+        _mm_store_ss(&resultArray[i], result[i]);
+    }
+
+    return Vector4(resultArray[0], resultArray[1], resultArray[2], resultArray[3]);
 }
+
 
 // Transpose
 Matrix4 Matrix4::transpose() const {

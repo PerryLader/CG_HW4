@@ -126,7 +126,7 @@ void Line::draw(GBuffer& gBuffer,int width,int hight)const
     int x2 = (m_b.x * halfWidth) + halfWidth;
     int y1 = (m_a.y*halfhight)+halfhight;
     int y2 = (m_b.y * halfhight) + halfhight;
-    gBuffer.allocateBBox(std::min(x1,x2), std::min(y1, y2), std::max(x1, x2), std::max(y1, y2));
+    //gBuffer.allocateBBox(std::min(x1,x2), std::min(y1, y2), std::max(x1, x2), std::max(y1, y2));
 
     int dx = abs(x2 - x1), dy = abs(y2 - y1);
     int sx = (x1 < x2) ? 1 : -1; // Step for x

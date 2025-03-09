@@ -42,44 +42,33 @@ private:
     }
 
 public:
-    using SetType = std::set<GData>;
+    using SetType = std::vector<GData>;
+
     using BufferType = std::unordered_map<int, SetType>;
 
-    GBuffer(size_t width, size_t height) : width_(width), height_(height) {}
-
-    ~GBuffer() = default;
-
-    void allocateBBox(size_t x1, size_t y1, size_t x2, size_t y2) {
-        size_t totalSize = (x2 - x1 + 1) * (y2 - y1 + 1);
-        buffer_.reserve(totalSize);
+    GBuffer(size_t width, size_t height) : width_(width), height_(height), bufferDemo_(height, std::vector<SetType*>(width, nullptr)) {
     }
+
+    ~GBuffer() {
+        for (auto& elem : freeing_list_)
+            delete elem.second;
+    };
 
     void push(size_t x, size_t y, const GData& data) {
-        if (x < width_ && y < height_)
-            buffer_[getKey(x, y)].insert(data);
+
+        if (bufferDemo_[y][x] == nullptr) {
+            bufferDemo_[y][x] = new SetType();
+            freeing_list_.push_back(std::pair<int , SetType*>(getKey(x,y), bufferDemo_[y][x]));
+        }
+        bufferDemo_[y][x]->push_back(data);
     }
 
-    SetType& get(size_t x, size_t y) {
-        auto it = buffer_.find(getKey(x, y));
-        if (it != buffer_.end()) {
-            return it->second;
-        }
-        return emptySet_;
-    }
-
-    const SetType& get(size_t x, size_t y) const {
-        auto it = buffer_.find(getKey(x, y));
-        if (it != buffer_.end()) {
-            return it->second;
-        }
-        return emptySet_;
-    }
-    std::vector<std::vector<std::reference_wrapper<const std::pair<const int, SetType>>>> getNParts(size_t n) const {
-        std::vector<std::vector<std::reference_wrapper<const std::pair<const int, SetType>>>> parts(n);
-        size_t i = 0;
-        for (const auto& entry : buffer_) {
-            parts[i % n].push_back(std::cref(entry));
-            ++i;
+    std::vector<std::vector<std::pair<int, SetType*>*>> getNParts(size_t n) {
+        std::vector<std::vector<std::pair<int, SetType*>*>> parts(n);
+        size_t k = 0;
+        for (auto& elem : freeing_list_) {
+            parts[k % n].push_back(&elem);
+            k++;
         }
         return parts;
     }
@@ -88,6 +77,7 @@ public:
 private:
     size_t width_;
     size_t height_;
-    BufferType buffer_;
+    std::vector<std::vector<SetType*>> bufferDemo_;
+    std::vector<std::pair<int ,SetType*>> freeing_list_;
     SetType emptySet_;
 };

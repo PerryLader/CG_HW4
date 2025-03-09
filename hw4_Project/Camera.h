@@ -56,14 +56,14 @@ private:
         double fovRad = m_fov * (3.14159265358979323846 / 180.0);
 
         // Calculate scale factors
-        double tanHalfFovY = std::tan(fovRad / 2.0);
-        double range = m_farPlane - m_nearPlane;
+        float tanHalfFovY = std::tan(fovRad / 2.0);
+        float range = m_farPlane - m_nearPlane;
 
         // Calculate matrix elements
-        double m00 = 1.0 / tanHalfFovY;
-        double m11 = m00;
-        double m22 = -(m_farPlane + m_nearPlane) / range;
-        double m23 = -2.0 * m_farPlane * m_nearPlane / range;
+        float m00 = 1.0 / tanHalfFovY;
+        float m11 = m00;
+        float m22 = -(m_farPlane + m_nearPlane) / range;
+        float m23 = -2.0 * m_farPlane * m_nearPlane / range;
         double m32 = -1.0;
 
         // Create the perspective matrix using the Matrix4 constructor

@@ -143,7 +143,7 @@ void Geometry::fillGbuffer(GBuffer& gBuffer, RenderMode& rm) const
 	int yMin = convertClipToScreen(getBBox().getMin().y, height / 2);
 	int xMax = convertClipToScreen(getBBox().getMax().x, width / 2);
 	int xMin = convertClipToScreen(getBBox().getMin().x, width / 2);
-	gBuffer.allocateBBox(xMin,yMin,xMax,yMax);
+	//gBuffer.allocateBBox(xMin,yMin,xMax,yMax);
 	for (const auto& poly : m_polygons) if (!rm.getRenderCulledFlag() || rm.getRenderCulledFlag() && poly->isVisible()) {
 		poly->fillGbuffer(gBuffer, rm);
 	}

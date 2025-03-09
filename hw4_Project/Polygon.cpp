@@ -466,19 +466,23 @@ bool compareEdgesByY(const std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Ve
     return min(a.first->loc().y, a.second->loc().y) < min(b.first->loc().y, b.second->loc().y);
 }
 
-void updateActiveEdges(int y, float halfhight, std::vector<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>>& lineVector, std::vector<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>>::iterator& currentLine, std::unordered_set<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>*>& activeEdges) {
+bool updateActiveEdges(int y, float halfhight, std::vector<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>>& lineVector, std::vector<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>>::iterator& currentLine, std::unordered_set<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>*>& activeEdges) {
+    bool res = true; 
     while (currentLine != lineVector.end() && min(convertClipToScreen(currentLine->first->loc().y, halfhight), convertClipToScreen(currentLine->second->loc().y, halfhight)) == y) {
         activeEdges.insert(&(*currentLine));
         ++currentLine;
+        res = false;
     }
     for (auto it = activeEdges.begin(); it != activeEdges.end();) {
         if (max(convertClipToScreen((*it)->first->loc().y, halfhight), convertClipToScreen((*it)->second->loc().y, halfhight)) < y) {
             it = activeEdges.erase(it);
+            res = false;
         }
         else {
             ++it;
         }
     }
+    return res;
 }
 void updateLineVertexes(std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>* edge, int y, float halfWidth, float halfhight, Vertex& smallestVecX, Vertex& biggestVecX, std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>*& smallestEdge, std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>*& biggestEdge, float& t_xmin ,float& t_xmax) {
     float t1 = 0;
@@ -538,37 +542,41 @@ void PolygonGC::fillGbuffer(GBuffer& gBuffer, const RenderMode& rm) const
 
     std::unordered_set<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>*> activeEdges;
     auto currentLine = lineVector.begin();
-    // Iterate over y-ranges
+    int smallX, bigX;
     for (int y = yMin; y < yMax; ++y) {
         // Update active edges
         updateActiveEdges(y, halfhight, lineVector, currentLine, activeEdges);
-        // Process active edges
-        Vertex smallestVecX(Vector3(FLT_MAX, FLT_MAX, FLT_MAX));
-        Vertex biggestVecX(Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX));
-        float t_xmin = 0,t_xmax = 0; 
+        //  active edges
+        Vector3 loc, dir, loc_delta;
+        ColorGC color;
+        float t_xmin = 0, t_xmax = 0;
+        Vertex smallestVecX = Vertex(Vector3(FLT_MAX, FLT_MAX, FLT_MAX));
+        Vertex biggestVecX = Vertex(Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX));
         for (const auto& edge : activeEdges)
-            updateLineVertexes(edge,y,halfWidth,halfhight,smallestVecX, biggestVecX, xMinEdge, xMaxEdge , t_xmin, t_xmax);
+            updateLineVertexes(edge, y, halfWidth, halfhight, smallestVecX, biggestVecX, xMinEdge, xMaxEdge, t_xmin, t_xmax);
         if (smallestVecX.loc() == Vector3(FLT_MAX, FLT_MAX, FLT_MAX) || biggestVecX.loc() == Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX))
             continue;
-        int smallX = convertClipToScreen(smallestVecX.loc().x, halfWidth);// max(0, transformToScreenSpace(smallestVecX.loc().x, halfWidth) - 1);
-        int bigX = convertClipToScreen(biggestVecX.loc().x, halfWidth); // min(width, transformToScreenSpace(biggestVecX.loc().x, halfWidth) + 1);
-        smallestVecX.setFromInterpolation(*xMinEdge->first, *xMinEdge->second, t_xmin , false, rm.getRenderShadeGouroudFlag(), rm.getRenderShadePhongFlag() && rm.getPolygonsUseCNormalFlag(), rm.getRenderShadePhongFlag() && rm.getRenderDynemic());
+        smallestVecX.setFromInterpolation(*xMinEdge->first, *xMinEdge->second, t_xmin, false, rm.getRenderShadeGouroudFlag(), rm.getRenderShadePhongFlag() && rm.getPolygonsUseCNormalFlag(), rm.getRenderShadePhongFlag() && rm.getRenderDynemic());
         biggestVecX.setFromInterpolation(*xMaxEdge->first, *xMaxEdge->second, t_xmax, false, rm.getRenderShadeGouroudFlag(), rm.getRenderShadePhongFlag() && rm.getPolygonsUseCNormalFlag(), rm.getRenderShadePhongFlag() && rm.getRenderDynemic());
-        ColorGC color;
+        smallX = convertClipToScreen(smallestVecX.loc().x, halfWidth);
+        bigX = convertClipToScreen(biggestVecX.loc().x, halfWidth); 
+        loc_delta = Vertex::calculate_delta_location(smallestVecX, biggestVecX, bigX - smallX);
         for (int x = smallX; x < bigX; x++)
         {
-            float t2 = (double)(x - smallX) / (bigX - smallX);
-            Line tmp = Line();
+            float t2 = (float)(x - smallX) / (bigX - smallX);
             if (rm.getRenderShadePhongFlag()) {
+                Line tmp = Line();
                 if (!rm.getPolygonsUseCNormalFlag())
                     tmp = Vertex::interpolate_dnormal(smallestVecX, biggestVecX, t2);
                 else
                     tmp = Vertex::interpolate_cnormal(smallestVecX, biggestVecX, t2);
+                loc = tmp.m_a;
+                dir = tmp.direction();
             }
             else
-                tmp.m_a = Vertex::interpolate_loc(smallestVecX, biggestVecX, t2);
+                loc = smallestVecX.loc() + loc_delta * (x - smallX);
             color = rm.getRenderShadeGouroudFlag() ? Vertex::interpolate_color(smallestVecX, biggestVecX, t2) : color;
-            gBuffer.push(x, y, GData(this, color, tmp.m_a, tmp.direction()));
+            gBuffer.push(x, y, GData(this, color, loc, dir));
         }
     }
 }

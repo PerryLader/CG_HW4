@@ -1,6 +1,6 @@
 #ifndef VECTOR4_H
 #define VECTOR4_H
-
+#include <immintrin.h>
 #include "Vector3.h"
 #include <iostream>
 #include <sstream>

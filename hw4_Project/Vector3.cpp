@@ -24,22 +24,46 @@ bool Vector3::isPointInUnitCube() const
 
 // Addition
 Vector3 Vector3::operator+(const Vector3& other) const {
-    return Vector3(x + other.x, y + other.y, z + other.z);
+    __m128 vecValues = _mm_set_ps(z, z, y, x);
+    __m128 otherValues = _mm_set_ps(other.z, other.z, other.y, other.x);
+    //__m128 scalarValue = _mm_set1_ps(scalar);
+    __m128 result = _mm_add_ps(vecValues, otherValues);
+    float resultArray[4];
+    _mm_storeu_ps(resultArray, result);
+    return Vector3(resultArray[0], resultArray[1], resultArray[2]);
 }
 
 // Subtraction
 Vector3 Vector3::operator-(const Vector3& other) const {
-    return Vector3(x - other.x, y - other.y, z - other.z);
+    __m128 vecValues = _mm_set_ps(z, z, y, x);
+    __m128 otherValues = _mm_set_ps(other.z, other.z, other.y, other.x);
+    //__m128 scalarValue = _mm_set1_ps(scalar);
+    __m128 result = _mm_sub_ps(vecValues, otherValues);
+    float resultArray[4];
+    _mm_storeu_ps(resultArray, result);
+    return Vector3(resultArray[0], resultArray[1], resultArray[2]);
 }
 
 // Scaling
 Vector3 Vector3::operator*(const float scalar) const {
-    return Vector3(x * scalar, y * scalar, z * scalar);
+    __m128 vecValues = _mm_set_ps(z, z, y, x);
+    //__m128 otherValues = _mm_set_ps(other.z, other.z, other.y, other.x);
+    __m128 scalarValue = _mm_set1_ps(scalar);
+    __m128 result = _mm_mul_ps(vecValues, scalarValue);
+    float resultArray[4];
+    _mm_storeu_ps(resultArray, result);
+    return Vector3(resultArray[0], resultArray[1], resultArray[2]);
 }
 
 // Division
 Vector3 Vector3::operator/(const float scalar) const {
-    return Vector3(x / scalar, y / scalar, z / scalar);
+    __m128 vecValues = _mm_set_ps(z, z, y, x);
+    //__m128 otherValues = _mm_set_ps(other.z, other.z, other.y, other.x);
+    __m128 scalarValue = _mm_set1_ps(scalar);
+    __m128 result = _mm_div_ps(vecValues, scalarValue);
+    float resultArray[4];
+    _mm_storeu_ps(resultArray, result);
+    return Vector3(resultArray[0], resultArray[1], resultArray[2]);
 }
 
 // Compound assignment operators
@@ -106,11 +130,18 @@ Vector3 Vector3::rotationZ(const Vector3& vec, float angle) {
 
 // Scaling
 Vector3 Vector3::scaling(const Vector3& vec, float sx, float sy, float sz) {
-    return Vector3(
-        vec.x * sx,
-        vec.y * sy,
-        vec.z * sz
-    );
+    __m128 vecValues = _mm_set_ps(vec.z, vec.z, vec.y, vec.x);
+    __m128 otherValues = _mm_set_ps(sz, sz, sy, sx);
+    //__m128 scalarValue = _mm_set1_ps(scalar);
+    __m128 result = _mm_mul_ps(vecValues, otherValues);
+    float resultArray[4];
+    _mm_storeu_ps(resultArray, result);
+    return Vector3(resultArray[0], resultArray[1], resultArray[2]);
+    //return Vector3(
+    //    vec.x * sx,
+    //    vec.y * sy,
+    //    vec.z * sz
+    //);
 }
 
 Vector3 Vector3::scale(float sx, float sy, float sz) {
@@ -135,7 +166,14 @@ Vector3 Vector3::translate(const Vector3& vec, float tx, float ty, float tz) {
 
 // Dot product
 float Vector3::dot(const Vector3& v1, const Vector3& v2) {
-    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+    float zero = 0.0;
+    __m128 vec1Values = _mm_set_ps(zero, v1.z, v1.y, v1.x);
+    __m128 vec2Values = _mm_set_ps(zero, v2.z, v2.y, v2.x);
+    //__m128 scalarValue = _mm_set1_ps(scalar);
+    __m128 result = _mm_mul_ps(vec1Values, vec2Values);
+    float resultArray[4];
+    _mm_storeu_ps(resultArray, result);
+    return resultArray[0]+ resultArray[1]+ resultArray[2];
 }
 
 // Cross product

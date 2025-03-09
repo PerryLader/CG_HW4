@@ -78,15 +78,16 @@ void Shader::updateLighting(LightParams lights[MAX_LIGHT], LightParams ambient, 
 		m_ambient = ambient;
 		m_specularityExp = sceneSpecExp;
 }
-
-void Shader::perThreadApllyShading(uint32_t* dest, GBuffer& gBuff, std::vector<std::reference_wrapper<const std::pair<const int, GBuffer::SetType>>>& gLists, const RenderMode& rd, const Shader* shader){
+void Shader::perThreadApllyShading(uint32_t* dest, GBuffer& gBuff, std::vector<std::pair<int, GBuffer::SetType*>*>& gLists, const RenderMode& rd, const Shader* shader) {
+//void Shader::perThreadApllyShading(uint32_t* dest, GBuffer& gBuff, std::vector<std::reference_wrapper<const std::pair<const int, GBuffer::SetType>>>& gLists, const RenderMode& rd, const Shader* shader){
 int width = gBuff.getWidth();
 	SHADE_MODE mode = rd.getRenderShadeFlag();
 
 	for (auto& elem : gLists) {
-		auto& dataSet = elem.get().second;
+		auto& dataSet = *elem->second;
 		if (dataSet.empty())
 			continue;
+		std::sort(dataSet.begin(), dataSet.end());
 		ColorGC tmp;
 		auto start = dataSet.begin();
 		switch (mode) {
@@ -117,7 +118,7 @@ int width = gBuff.getWidth();
 			}
 			break;
 		}
-		int key = elem.get().first;
+		int key = elem->first;
 		ColorGC finalColor = ColorGC::alphaColorInterpolating(tmp, ColorGC(dest[key]));
 		dest[key] = finalColor.getARGB();
 	}
@@ -127,7 +128,8 @@ void Shader::applyShading(uint32_t* dest, GBuffer& gBuff, const RenderMode& rd) 
 
 	SHADE_MODE mode = rd.getRenderShadeFlag();
 	int numThreads = 4;
-	std::vector<std::vector<std::reference_wrapper<const std::pair<const int, GBuffer::SetType>>>> parts = gBuff.getNParts(numThreads);
+	std::vector<std::vector<std::pair<int, GBuffer::SetType*>*>> parts = gBuff.getNParts(numThreads);
+	//std::vector<std::vector<std::reference_wrapper<const std::pair<const int, GBuffer::SetType>>>> parts = gBuff.getNParts(numThreads);
 	std::vector<std::thread> threads;
 	for (int i = 0; i < numThreads; ++i) {
 		threads.emplace_back(perThreadApllyShading, dest, std::ref(gBuff), std::ref(parts[i]), rd, this);

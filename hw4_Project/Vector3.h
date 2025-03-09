@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <cmath>
+#include <immintrin.h>
 
 class Vector3 {
 public:

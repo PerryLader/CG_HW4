@@ -7,7 +7,6 @@
 #include "Model.h"
 
 
-
 class MovieMode {
 public:
     int mov_width, mov_height, mov_fps, mov_length, mov_degree;
@@ -23,17 +22,12 @@ class MovieDirector
     class MovieScene
     {
     public:
-
-        ~MovieScene() {
-            delete m_origCamera;
-        }
-        void push_back(const Matrix4& tMat, bool Objspace);
+        void push_back(const Matrix4& tMat);
 
         int size() const;
 
-        const Camera* ccamera() const;
-        Camera*& camera();
-        void set_camera(Camera* camera);
+        const std::shared_ptr<Camera>  ccamera() const;
+        std::shared_ptr<Camera>& camera();
 
         std::vector<Matrix4> getStackedTransformations() const;
         std::vector<Matrix4> getLTransformations() const;
@@ -47,7 +41,7 @@ class MovieDirector
 
     private:
         std::vector <std::pair<Matrix4, Matrix4>> m_keyTransformations;
-        Camera* m_origCamera;
+        std::shared_ptr<Camera> m_origCamera;
         Matrix4 m_cumulativeObjMat;
     };
 

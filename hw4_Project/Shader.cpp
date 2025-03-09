@@ -127,7 +127,7 @@ int width = gBuff.getWidth();
 void Shader::applyShading(uint32_t* dest, GBuffer& gBuff, const RenderMode& rd) const {
 
 	SHADE_MODE mode = rd.getRenderShadeFlag();
-	int numThreads = 4;
+	int numThreads = 2;
 	std::vector<std::vector<std::pair<int, GBuffer::SetType*>>> parts = gBuff.getNParts(numThreads);
 	//std::vector<std::vector<std::reference_wrapper<const std::pair<const int, GBuffer::SetType>>>> parts = gBuff.getNParts(numThreads);
 	std::vector<std::thread> threads;

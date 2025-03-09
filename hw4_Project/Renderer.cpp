@@ -104,7 +104,7 @@ void Renderer::render(const Camera* camera, int width, int height, const std::ve
         threads.emplace_back([&, model]() {
             std::vector<Line> lines[LineVectorIndex::LAST];
             std::unordered_map<Line, EdgeMode, LineKeyHash, LineKeyEqual> SilhoutteMap;
-            std::unique_ptr<Geometry> transformedGeometry = model->applyTransformation(viewProjectionMatrix, renderMode.getRenderWithFlipedNormalsFlag(),1);
+            std::unique_ptr<Geometry> transformedGeometry = model->applyTransformation(viewProjectionMatrix, renderMode.getRenderWithFlipedNormalsFlag(),2);
             if (transformedGeometry) {
                 transformedGeometry->clip();
                 transformedGeometry->backFaceCulling(camera->isPerspective(), projectionAspectMatrix_inv);

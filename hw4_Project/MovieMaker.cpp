@@ -1,7 +1,6 @@
 #include "MovieMaker.h"
 
-void MovieDirector::MovieScene::push_back(const Matrix4& tMat, bool Objspace) {
-    //Objspace ? m_keyTransformations.push_back(std::pair<Matrix4, Matrix4>(Matrix4::identity(), tMat)) : m_keyTransformations.push_back(std::pair<Matrix4, Matrix4>(tMat,Matrix4::identity()));
+void MovieDirector::MovieScene::push_back(const Matrix4& tMat) {
     m_keyTransformations.push_back(std::pair<Matrix4, Matrix4>(tMat, m_cumulativeObjMat));
 }
 
@@ -9,13 +8,11 @@ int MovieDirector::MovieScene::size() const {
     return m_keyTransformations.size();
 }
 
-Camera*& MovieDirector::MovieScene::camera(){
+std::shared_ptr<Camera>&  MovieDirector::MovieScene::camera(){
     return m_origCamera;
 }
-void MovieDirector::MovieScene::set_camera(Camera* camera) {
-    m_origCamera = camera;
-}
-const Camera* MovieDirector::MovieScene::ccamera() const{
+
+const std::shared_ptr<Camera> MovieDirector::MovieScene::ccamera() const{
     return m_origCamera;
 }
 void MovieDirector::MovieScene::apply_to_frames(const Matrix4& tmat , bool L, bool R, bool rtl) {
@@ -61,24 +58,18 @@ Matrix4 MovieDirector::MovieScene::getObjCurrent() const {
 }
 
 void MovieDirector::create_new_scene(const Camera* camera) {
-    m_movie_scenes.emplace_back(camera);
-    m_movie_scenes.back().push_back(Matrix4::identity(), false);
+    m_movie_scenes.push_back(camera);
+    m_movie_scenes.back().push_back(Matrix4::identity());
 }
 
 void MovieDirector::addKeyFrame() {
     if (!m_movie_scenes.empty()) {
         if (m_viewTrans) {
-            m_movie_scenes.back().push_back(m_viewspaceTrans, false);
-            // m_viewspaceTrans = Matrix4::identity();
+            m_movie_scenes.back().push_back(m_viewspaceTrans);
             m_viewTrans = false;
         }
         if (m_objTrans) {
-            //Matrix4 inv_trans = m_objspaceTrans.irit_inverse();
-            //for (auto& scene : m_movie_scenes) {
-            //    scene.apply_to_frames(inv_trans, false, true, true);
-            //}
-            //m_objspaceTrans = Matrix4::identity();
-            m_movie_scenes.back().push_back(m_viewspaceTrans, true);
+            m_movie_scenes.back().push_back(m_viewspaceTrans);
             m_objTrans = false;
         }
     }
@@ -155,7 +146,6 @@ void MovieDirector::produceMovie(int width, int height, const MovieMode& mm, Ren
                 delete mod;
             }
         }
-    
     }
 }
 
